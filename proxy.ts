@@ -13,7 +13,7 @@ export function proxy(request: NextRequest) {
     if (request.nextUrl.pathname !== "/") url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
-  if (hasSession && isLogin) return NextResponse.redirect(new URL("/payments", request.nextUrl));
+  if (hasSession && isLogin) return NextResponse.redirect(new URL("/", request.nextUrl));
   return NextResponse.next();
 }
 

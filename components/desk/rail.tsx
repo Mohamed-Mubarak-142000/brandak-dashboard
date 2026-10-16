@@ -12,6 +12,7 @@ import {
   Settings2,
   ShoppingBag,
   Store,
+  UserRound,
   Users,
   X,
 } from "lucide-react";
@@ -38,18 +39,19 @@ const NAV: { group: string; items: NavItem[] }[] = [
     group: "يحتاج قرارك",
     items: [
       { href: "/payments", label: "المدفوعات", icon: ReceiptText, count: "payments", ready: true },
-      { href: "/brands", label: "البراندات", icon: Store, count: "brands", ready: false },
-      { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: false },
+      { href: "/brands", label: "البراندات", icon: Store, count: "brands", ready: true },
+      { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: true },
     ],
   },
   {
     group: "المتابعة",
     items: [
-      { href: "/", label: "نظرة عامة", icon: LayoutList, ready: false },
-      { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: false },
-      { href: "/users", label: "المستخدمون", icon: Users, ready: false },
-      { href: "/audit", label: "سجل العمليات", icon: ScrollText, ready: false },
-      { href: "/settings", label: "الباقات والتصنيفات", icon: Settings2, ready: false },
+      { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
+      { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
+      { href: "/users", label: "المستخدمون", icon: Users, ready: true },
+      { href: "/audit", label: "سجل العمليات", icon: ScrollText, ready: true },
+      { href: "/settings", label: "الباقات والتصنيفات", icon: Settings2, ready: true },
+      { href: "/account", label: "حسابي", icon: UserRound, ready: true },
     ],
   },
 ];

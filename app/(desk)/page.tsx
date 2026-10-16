@@ -1,6 +1,13 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { OverviewPage } from "@/components/overview/overview-page";
 
-// The overview page isn't built yet; the review queue is where the work is.
-export default function Home() {
-  redirect("/payments");
+export const metadata: Metadata = { title: "نظرة عامة" };
+
+export default function Page() {
+  return (
+    <Suspense>
+      <OverviewPage />
+    </Suspense>
+  );
 }

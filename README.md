@@ -31,14 +31,19 @@ The tokens are in `app/globals.css`, with light and dark modes.
 
 ## Pages
 
-- **Payments** `/payments`: a TanStack Table (v9).
-  - The status filter covers every status, with counts: under review, awaiting receipt, rejected, approved, cancelled, all.
-  - Quick search by brand name or reference, sorting, and paging. The filter, page and sort live in the URL.
-  - Every row has a "view details / review" action, plus a menu: open the receipt, copy the reference, reject with a reason.
-- **Payment review** `/payments/[id]`: the receipt from a short-lived signed link, a verification checklist before approving, rejection with a reason, and the verification stamp.
-  - After each decision, the next waiting receipt opens.
-  - Keyboard shortcuts: `A` to approve, `R` to reject, `Z` to zoom.
-- The remaining pages appear in the nav rail marked "قريبًا" (coming soon) until they're built.
+Every list page uses the same components (`components/data/`): a TanStack Table (v9) on desktop and a list on phones, a filter dialog with removable chips, search, paging, and the loading, empty and error states. Filters live in the URL.
+
+| Page | What it does |
+|---|---|
+| `/` Overview | What's waiting for a decision (receipts, brand applications, reports), MRR and collections, active subscriptions by plan, and brand counts. |
+| `/payments` + `/payments/[id]` | Reviewing InstaPay receipts: a verification checklist, the stamp, and rejection with a reason. |
+| `/brands` + `/brands/[id]` | Approve, reject, suspend and reinstate. The detail page shows shipping, subscriptions, payments and the brand's activity log. |
+| `/orders` + `/orders/[id]` | Search by order number or phone, filter by status and date range, the order timeline, and admin cancellation with a reason. |
+| `/reports` | Close a report after taking action, dismiss it, hide or show a review, take a product down. |
+| `/users` | Search, suspend and reinstate. Suspending signs the user out of every device. |
+| `/audit` | The read-only log of every sensitive action, filterable by element type. |
+| `/settings` | Subscription plans and categories, with create, edit, activate and deactivate. |
+| `/account` | Account details and changing the password. |
 
 ## Deploy on Vercel
 

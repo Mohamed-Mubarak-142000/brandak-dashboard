@@ -38,3 +38,30 @@ export const BRAND_STATUS: Record<string, { label: string; tone: Tone }> = {
   REJECTED: { label: "مرفوض", tone: "danger" },
   SUSPENDED: { label: "موقوف", tone: "danger" },
 };
+
+export const SUBSCRIPTION_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING_PAYMENT: { label: "بانتظار الدفع", tone: "warning" },
+  ACTIVE: { label: "فعّال", tone: "success" },
+  EXPIRED: { label: "منتهي", tone: "neutral" },
+  CANCELLED: { label: "ملغي", tone: "neutral" },
+};
+
+export const ORDER_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING: { label: "قيد المراجعة", tone: "warning" },
+  CONFIRMED: { label: "تم التأكيد", tone: "accent" },
+  PROCESSING: { label: "قيد التجهيز", tone: "accent" },
+  SHIPPED: { label: "تم الشحن", tone: "accent" },
+  DELIVERED: { label: "تم التسليم", tone: "success" },
+  CANCELLED: { label: "ملغي", tone: "neutral" },
+};
+
+export const REPORT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  OPEN: { label: "مفتوح", tone: "warning" },
+  RESOLVED: { label: "تم الإجراء", tone: "success" },
+  DISMISSED: { label: "مرفوض", tone: "neutral" },
+};
+
+export const USER_STATUS: Record<string, { label: string; tone: Tone }> = {
+  ACTIVE: { label: "نشط", tone: "success" },
+  SUSPENDED: { label: "موقوف", tone: "danger" },
+};

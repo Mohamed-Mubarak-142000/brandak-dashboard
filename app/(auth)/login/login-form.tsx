@@ -37,7 +37,7 @@ export function LoginForm() {
     }
     // Only follow same-site paths, never an absolute URL from the query string.
     const next = params.get("next");
-    window.location.assign(next?.startsWith("/") && !next.startsWith("//") ? next : "/payments");
+    window.location.assign(next?.startsWith("/") && !next.startsWith("//") ? next : "/");
   });
 
   return (
