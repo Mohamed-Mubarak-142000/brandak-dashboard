@@ -1,0 +1,164 @@
+@import "tailwindcss";
+
+/*
+ * Brandak operations desk — design tokens.
+ * Limestone ground, deep ink, and one accent: the blue of an official rubber stamp.
+ * The stamp blue is reserved for primary actions, focus and the "verified" stamp.
+ */
+:root {
+  color-scheme: light;
+
+  --ground: #eef1ec;
+  --surface: #ffffff;
+  --sunken: #f5f7f4;
+  --line: #d6ddd7;
+  --line-strong: #b8c3bb;
+
+  --ink: #14201d;
+  --ink-2: #44544f;
+  --ink-3: #64736e;
+
+  --stamp: #3340a0;
+  --stamp-hover: #29338a;
+  --stamp-soft: #e7e9f7;
+  --on-stamp: #ffffff;
+
+  --success: #1d7348;
+  --success-soft: #e2f0e7;
+  --warning: #8f5400;
+  --warning-soft: #f7ecd9;
+  --danger: #b42318;
+  --danger-hover: #971c13;
+  --danger-soft: #fbe6e3;
+
+  --shadow-pop: 0 12px 32px -12px rgb(20 32 29 / 0.28), 0 2px 6px -2px rgb(20 32 29 / 0.12);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --ground: #0f1513;
+    --surface: #161e1b;
+    --sunken: #121916;
+    --line: #26322e;
+    --line-strong: #364540;
+    --ink: #e5ebe7;
+    --ink-2: #b2beb9;
+    --ink-3: #8a9893;
+    --stamp: #9aa6ff;
+    --stamp-hover: #b3bcff;
+    --stamp-soft: #232a52;
+    --on-stamp: #10153a;
+    --success: #6cc596;
+    --success-soft: #16301f;
+    --warning: #e3ad5b;
+    --warning-soft: #33250f;
+    --danger: #f08a7e;
+    --danger-hover: #f5a59b;
+    --danger-soft: #3a1b17;
+    --shadow-pop: 0 12px 32px -12px rgb(0 0 0 / 0.6), 0 2px 6px -2px rgb(0 0 0 / 0.4);
+  }
+}
+
+@theme inline {
+  --color-ground: var(--ground);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-stamp: var(--stamp);
+  --color-stamp-hover: var(--stamp-hover);
+  --color-stamp-soft: var(--stamp-soft);
+  --color-on-stamp: var(--on-stamp);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: var(--font-plex), system-ui, sans-serif;
+  --font-display: var(--font-kufi), var(--font-plex), sans-serif;
+
+  /* Type scale (px): 12 meta · 14 UI · 16 body · 20 section · 28 page · 40 display */
+  --text-meta: 0.75rem;
+  --text-meta--line-height: 1.5;
+  --text-ui: 0.875rem;
+  --text-ui--line-height: 1.55;
+  --text-body: 1rem;
+  --text-body--line-height: 1.65;
+  --text-section: 1.25rem;
+  --text-section--line-height: 1.4;
+  --text-page: 1.75rem;
+  --text-page--line-height: 1.25;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.15;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  --shadow-pop: var(--shadow-pop);
+}
+
+@layer base {
+  html {
+    background: var(--ground);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-ui);
+    line-height: 1.55;
+    min-height: 100dvh;
+  }
+  /* Latin digits everywhere: amounts and references must match the InstaPay receipt exactly. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    unicode-bidi: isolate;
+    direction: ltr;
+    display: inline-block;
+  }
+  :focus-visible {
+    outline: 2px solid var(--stamp);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+  ::selection {
+    background: var(--stamp-soft);
+    color: var(--ink);
+  }
+}
+
+/* The stamp: the one expressive moment in the interface. */
+@keyframes stamp-press {
+  0% { opacity: 0; transform: rotate(-9deg) scale(1.7); }
+  60% { opacity: 1; transform: rotate(-9deg) scale(0.94); }
+  100% { opacity: 1; transform: rotate(-9deg) scale(1); }
+}
+.stamp-enter {
+  animation: stamp-press 420ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes skeleton-pulse {
+  50% { opacity: 0.55; }
+}
+.skeleton {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-enter,
+  .skeleton {
+    animation: none;
+  }
+  * {
+    transition-duration: 0ms !important;
+  }
+}
