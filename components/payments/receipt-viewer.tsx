@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { ExternalLink, ImageOff, ZoomIn, ZoomOut } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
 import { qk } from "@/lib/api/queries";
@@ -23,9 +24,10 @@ export function VerifiedStamp({ date, animate }: { date?: string; animate?: bool
       style={animate ? undefined : { transform: "rotate(-9deg)" }}
     >
       <div
-        className="flex flex-col items-center gap-1 rounded-md border-[3px] border-stamp px-6 py-3 text-stamp mix-blend-multiply dark:mix-blend-screen"
-        style={{ boxShadow: "inset 0 0 0 2px var(--surface), inset 0 0 0 4px var(--stamp)" }}
+        className="flex flex-col items-center gap-1 rounded-md border-[3px] border-brand px-6 py-3 text-accent mix-blend-multiply dark:mix-blend-screen"
+        style={{ boxShadow: "inset 0 0 0 2px var(--surface), inset 0 0 0 4px var(--brand)" }}
       >
+        <Image src="/brand/brandak-mark.png" alt="" width={22} height={28} className="h-7 w-auto" />
         <span className="font-display text-[34px] leading-none font-bold">تم التحقق</span>
         {date && <span className="text-meta font-semibold">{formatDate(date)}</span>}
       </div>
@@ -97,7 +99,7 @@ export function ReceiptViewer({
               <ImageOff aria-hidden className="size-6 text-ink-3" />
               تعذّر عرض الإيصال هنا.
               {proof.data && (
-                <a href={proof.data.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-stamp underline underline-offset-4">
+                <a href={proof.data.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-accent underline underline-offset-4">
                   فتح الملف في نافذة جديدة
                   <ExternalLink aria-hidden className="size-3.5" />
                 </a>

@@ -3,7 +3,7 @@ import { cn } from "@/lib/cn";
 
 const control =
   "w-full rounded-sm border border-line-strong bg-surface px-3 text-body text-ink placeholder:text-ink-3 " +
-  "transition-colors hover:border-ink-3 focus:border-stamp focus:outline-none focus-visible:outline-2 focus-visible:outline-stamp " +
+  "transition-colors hover:border-ink-3 focus:border-accent focus:outline-none focus-visible:outline-2 focus-visible:outline-accent " +
   "disabled:cursor-not-allowed disabled:bg-sunken disabled:text-ink-3 aria-[invalid=true]:border-danger";
 
 interface FieldProps {

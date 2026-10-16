@@ -26,12 +26,12 @@ export function Checkbox({
         onCheckedChange={(v) => onCheckedChange(v === true)}
         className={cn(
           "mt-0.5 grid size-5 shrink-0 cursor-pointer place-items-center rounded-[3px] border-[1.5px] border-line-strong bg-surface",
-          "transition-colors hover:border-stamp data-[state=checked]:border-stamp data-[state=checked]:bg-stamp",
+          "transition-colors hover:border-accent data-[state=checked]:border-accent data-[state=checked]:bg-accent",
           "disabled:cursor-not-allowed",
         )}
       >
         <RCheckbox.Indicator>
-          <Check aria-hidden strokeWidth={3} className="size-3.5 text-on-stamp" />
+          <Check aria-hidden strokeWidth={3} className="size-3.5 text-on-accent" />
         </RCheckbox.Indicator>
       </RCheckbox.Root>
       <label htmlFor={id} className="cursor-pointer text-ui leading-relaxed text-ink">

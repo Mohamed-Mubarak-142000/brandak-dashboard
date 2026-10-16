@@ -34,4 +34,15 @@ export function formatPhone(e164?: string | null) {
   return national.length === 11 ? `${national.slice(0, 4)} ${national.slice(4, 7)} ${national.slice(7)}` : national;
 }
 
+/** Case- and diacritic-insensitive matching for quick search (Arabic letter variants unified). */
+export function normalizeSearch(value: string) {
+  return value
+    .replace(/[ً-ٰٟـ]/g, "") // tashkeel and tatweel
+    .replace(/[أإآ]/g, "ا") // alef variants
+    .replace(/ى/g, "ي") // alef maqsura to yaa
+    .replace(/ة/g, "ه") // taa marbuta to haa
+    .toLowerCase()
+    .replace(/[\s-]+/g, "");
+}
+
 export const BILLING_LABEL = { MONTHLY: "شهري", YEARLY: "سنوي" } as const;

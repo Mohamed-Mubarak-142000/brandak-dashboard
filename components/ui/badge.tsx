@@ -1,10 +1,10 @@
 import { cn } from "@/lib/cn";
 
-type Tone = "neutral" | "stamp" | "success" | "warning" | "danger";
+type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
 
 const tones: Record<Tone, string> = {
   neutral: "bg-sunken text-ink-2 border-line",
-  stamp: "bg-stamp-soft text-stamp border-stamp/20",
+  accent: "bg-accent-soft text-accent border-accent/20",
   success: "bg-success-soft text-success border-success/20",
   warning: "bg-warning-soft text-warning border-warning/25",
   danger: "bg-danger-soft text-danger border-danger/20",

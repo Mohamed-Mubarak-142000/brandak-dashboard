@@ -5,6 +5,8 @@ import { api } from "./client";
 
 export const qk = {
   payments: (status: string) => ["payments", status] as const,
+  paymentsPage: (status: string, page: number, sort: string) => ["payments", status, page, sort] as const,
+  paymentCounts: ["payments", "counts"] as const,
   payment: (id: string) => ["payment", id] as const,
   proofUrl: (id: string) => ["payment", id, "proof"] as const,
   counts: ["queue-counts"] as const,

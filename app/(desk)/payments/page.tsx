@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { PaymentsDesk } from "@/components/payments/payments-desk";
+import { PaymentsTable } from "@/components/payments/payments-table";
 
-export const metadata: Metadata = { title: "مراجعة المدفوعات" };
+export const metadata: Metadata = { title: "المدفوعات" };
 
 export default function PaymentsPage() {
-  // The desk reads the URL (selected receipt, filter), which must sit inside Suspense.
+  // The table keeps its filter, page and sort in the URL, which must sit inside Suspense.
   return (
     <Suspense>
-      <PaymentsDesk />
+      <PaymentsTable />
     </Suspense>
   );
 }

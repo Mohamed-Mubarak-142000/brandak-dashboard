@@ -3,7 +3,6 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as RDialog from "@radix-ui/react-dialog";
 import {
-  BadgeCheck,
   Flag,
   LayoutList,
   LogOut,
@@ -16,6 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -37,7 +37,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "يحتاج قرارك",
     items: [
-      { href: "/payments", label: "مراجعة المدفوعات", icon: ReceiptText, count: "payments", ready: true },
+      { href: "/payments", label: "المدفوعات", icon: ReceiptText, count: "payments", ready: true },
       { href: "/brands", label: "البراندات", icon: Store, count: "brands", ready: false },
       { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: false },
     ],
@@ -56,8 +56,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
 
 function Wordmark() {
   return (
-    <span className="flex items-center gap-2">
-      <BadgeCheck aria-hidden className="size-6 text-stamp" strokeWidth={2.2} />
+    <span className="flex items-center gap-2.5">
+      <Image src="/brand/brandak-mark.png" alt="" width={26} height={33} priority className="h-8 w-auto" />
       <span className="font-display text-section leading-none text-ink">براندك</span>
       <span className="rounded-sm border border-line px-1.5 py-0.5 text-meta text-ink-3">الإدارة</span>
     </span>
@@ -85,7 +85,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                     <span
                       className={cn(
                         "num min-w-6 rounded-full px-1.5 text-center text-meta font-semibold leading-5",
-                        active ? "bg-stamp text-on-stamp" : "bg-warning-soft text-warning",
+                        active ? "bg-accent text-on-accent" : "bg-warning-soft text-warning",
                       )}
                       aria-label={`${count} بانتظار القرار`}
                     >
@@ -107,7 +107,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                       className={cn(
                         base,
                         active
-                          ? "bg-surface font-semibold text-ink shadow-[inset_-3px_0_0_var(--stamp)]"
+                          ? "bg-surface font-semibold text-ink shadow-[inset_-3px_0_0_var(--accent)]"
                           : "text-ink-2 hover:bg-surface/70 hover:text-ink",
                       )}
                     >

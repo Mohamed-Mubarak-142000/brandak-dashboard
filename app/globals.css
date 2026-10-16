@@ -2,57 +2,61 @@
 
 /*
  * Brandak operations desk — design tokens.
- * Limestone ground, deep ink, and one accent: the blue of an official rubber stamp.
- * The stamp blue is reserved for primary actions, focus and the "verified" stamp.
+ * Neutral stone ground and warm ink, so the brand orange from the logo stays the only colour that speaks.
+ * --brand is the exact logo orange (#F16B21): logo, stamp ring, large marks.
+ * --accent is the same hue darkened to pass WCAG AA with white text (4.8:1): buttons, links, focus.
  */
 :root {
   color-scheme: light;
 
-  --ground: #eef1ec;
+  --ground: #f2f1ee;
   --surface: #ffffff;
-  --sunken: #f5f7f4;
-  --line: #d6ddd7;
-  --line-strong: #b8c3bb;
+  --sunken: #f7f6f3;
+  --line: #dfddd7;
+  --line-strong: #c5c1b8;
 
-  --ink: #14201d;
-  --ink-2: #44544f;
-  --ink-3: #64736e;
+  --ink: #1d1916;
+  --ink-2: #4c4640;
+  --ink-3: #6d665e;
 
-  --stamp: #3340a0;
-  --stamp-hover: #29338a;
-  --stamp-soft: #e7e9f7;
-  --on-stamp: #ffffff;
+  --brand: #f16b21;
+  --accent: #c2500f;
+  --accent-hover: #a5430b;
+  --accent-soft: #fdeee3;
+  --on-accent: #ffffff;
 
   --success: #1d7348;
   --success-soft: #e2f0e7;
-  --warning: #8f5400;
-  --warning-soft: #f7ecd9;
+  /* Amber-olive, kept clearly apart from the orange accent. */
+  --warning: #7a5b00;
+  --warning-soft: #f6efd2;
   --danger: #b42318;
   --danger-hover: #971c13;
   --danger-soft: #fbe6e3;
 
-  --shadow-pop: 0 12px 32px -12px rgb(20 32 29 / 0.28), 0 2px 6px -2px rgb(20 32 29 / 0.12);
+  --shadow-pop: 0 12px 32px -12px rgb(29 25 22 / 0.28), 0 2px 6px -2px rgb(29 25 22 / 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --ground: #0f1513;
-    --surface: #161e1b;
-    --sunken: #121916;
-    --line: #26322e;
-    --line-strong: #364540;
-    --ink: #e5ebe7;
-    --ink-2: #b2beb9;
-    --ink-3: #8a9893;
-    --stamp: #9aa6ff;
-    --stamp-hover: #b3bcff;
-    --stamp-soft: #232a52;
-    --on-stamp: #10153a;
+    --ground: #141210;
+    --surface: #1c1916;
+    --sunken: #171512;
+    --line: #2f2a25;
+    --line-strong: #433d36;
+    --ink: #eeeae5;
+    --ink-2: #bfb8af;
+    --ink-3: #918a81;
+    --brand: #f16b21;
+    --accent: #f58a4b;
+    --accent-hover: #f8a470;
+    --accent-soft: #3b2415;
+    --on-accent: #1d0f06;
     --success: #6cc596;
     --success-soft: #16301f;
-    --warning: #e3ad5b;
-    --warning-soft: #33250f;
+    --warning: #dcbc5e;
+    --warning-soft: #33290d;
     --danger: #f08a7e;
     --danger-hover: #f5a59b;
     --danger-soft: #3a1b17;
@@ -69,10 +73,11 @@
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
-  --color-stamp: var(--stamp);
-  --color-stamp-hover: var(--stamp-hover);
-  --color-stamp-soft: var(--stamp-soft);
-  --color-on-stamp: var(--on-stamp);
+  --color-brand: var(--brand);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-accent: var(--on-accent);
   --color-success: var(--success);
   --color-success-soft: var(--success-soft);
   --color-warning: var(--warning);
@@ -126,12 +131,12 @@
     display: inline-block;
   }
   :focus-visible {
-    outline: 2px solid var(--stamp);
+    outline: 2px solid var(--accent);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
   ::selection {
-    background: var(--stamp-soft);
+    background: var(--accent-soft);
     color: var(--ink);
   }
 }

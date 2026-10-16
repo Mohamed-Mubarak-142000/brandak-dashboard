@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Suspense } from "react";
 import { LoginForm } from "./login-form";
 
@@ -8,8 +9,9 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-dvh place-items-center px-4 py-10">
       <div className="w-full max-w-[400px]">
-        <h1 className="font-display text-display text-ink">براندك</h1>
-        <p className="mt-2 text-body text-ink-2">لوحة إدارة المنصة. الدخول لفريق الإدارة فقط.</p>
+        <Image src="/brand/brandak-logo.png" alt="براندك" width={980} height={800} priority className="h-20 w-auto" />
+        <h1 className="mt-8 font-display text-page text-ink">لوحة الإدارة</h1>
+        <p className="mt-1.5 text-body text-ink-2">الدخول لفريق إدارة المنصة فقط.</p>
         <div className="mt-8 rounded-md border border-line bg-surface p-6 sm:p-8">
           <Suspense>
             <LoginForm />

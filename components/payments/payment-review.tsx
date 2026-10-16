@@ -157,17 +157,17 @@ export function PaymentReview({
         <button
           type="button"
           onClick={onBack}
-          className="-ms-2 mb-3 inline-flex h-9 items-center gap-1.5 rounded-sm px-2 text-ui text-ink-2 hover:bg-sunken hover:text-ink lg:hidden"
+          className="-ms-2 mb-3 inline-flex h-9 items-center gap-1.5 rounded-sm px-2 text-ui text-ink-2 hover:bg-sunken hover:text-ink"
         >
           <ArrowRight aria-hidden className="size-4" />
-          كل الإيصالات
+          كل المدفوعات
         </button>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="review-title" className="font-display text-page text-ink">
             {brand.name}
           </h2>
           <Badge tone={status.tone}>{status.label}</Badge>
-          {sub.renewalOf && <Badge tone="stamp">تجديد</Badge>}
+          {sub.renewalOf && <Badge tone="accent">تجديد</Badge>}
         </div>
         <p className="mt-1.5 text-ui text-ink-2">
           باقة {sub.planSnapshot.nameAr}، اشتراك {BILLING_LABEL[sub.billingPeriod]}
