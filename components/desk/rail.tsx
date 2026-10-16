@@ -85,7 +85,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                     <span
                       className={cn(
                         "num min-w-6 rounded-full px-1.5 text-center text-meta font-semibold leading-5",
-                        active ? "bg-accent text-on-accent" : "bg-warning-soft text-warning",
+                        active ? "bg-accent text-on-accent" : "bg-accent-soft text-accent",
                       )}
                       aria-label={`${count} بانتظار القرار`}
                     >
@@ -107,7 +107,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                       className={cn(
                         base,
                         active
-                          ? "bg-surface font-semibold text-ink shadow-[inset_-3px_0_0_var(--accent)]"
+                          ? "bg-surface font-semibold text-ink shadow-[inset_-3px_0_0_var(--brand)]"
                           : "text-ink-2 hover:bg-surface/70 hover:text-ink",
                       )}
                     >

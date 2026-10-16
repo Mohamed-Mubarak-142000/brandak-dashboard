@@ -20,26 +20,17 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { api, ApiError } from "@/lib/api/client";
 import { qk } from "@/lib/api/queries";
-import type { PaymentListItem, PaymentStatus } from "@/lib/api/types";
+import type { PaymentListItem } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatMoney, formatRelative, normalizeSearch } from "@/lib/format";
 import { Badge, PAYMENT_STATUS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
+import { ActiveFilterChips, DEFAULT_STATUS, defaultSort, FILTERS, PaymentFilters, type Filter, type Sort } from "./payment-filters";
 import { RejectDialog } from "./reject-dialog";
 
 const PAGE_SIZE = 20;
-
-type Filter = PaymentStatus | "ALL";
-const FILTERS: { value: Filter; label: string }[] = [
-  { value: "PENDING_REVIEW", label: "قيد المراجعة" },
-  { value: "AWAITING_PROOF", label: "بانتظار الإيصال" },
-  { value: "REJECTED", label: "مرفوضة" },
-  { value: "APPROVED", label: "معتمدة" },
-  { value: "CANCELLED", label: "ملغاة" },
-  { value: "ALL", label: "الكل" },
-];
 
 const EMPTY: Record<Filter, { title: string; description: string }> = {
   PENDING_REVIEW: { title: "لا توجد إيصالات بانتظارك", description: "أي إيصال جديد يرفعه صاحب براند سيظهر هنا، الأقدم أولًا." },
@@ -200,12 +191,10 @@ export function PaymentsTable() {
   const toast = useToast();
   const queryClient = useQueryClient();
 
-  const status = (FILTERS.find((f) => f.value === params.get("status"))?.value ?? "PENDING_REVIEW") as Filter;
+  const status = (FILTERS.find((f) => f.value === params.get("status"))?.value ?? DEFAULT_STATUS) as Filter;
   const page = Math.max(1, Number(params.get("page")) || 1);
-  // The review queue is first come, first served; everything else reads newest first.
-  const sort = params.get("sort") === "oldest" || params.get("sort") === "newest"
-    ? (params.get("sort") as "oldest" | "newest")
-    : status === "PENDING_REVIEW" ? "oldest" : "newest";
+  const sortParam = params.get("sort");
+  const sort: Sort = sortParam === "oldest" || sortParam === "newest" ? sortParam : defaultSort(status);
   const [search, setSearch] = useState("");
   const [rejecting, setRejecting] = useState<PaymentListItem | null>(null);
 
@@ -316,47 +305,8 @@ export function PaymentsTable() {
         <p className="text-ui text-ink-2">طابق كل إيصال مع حساب InstaPay قبل تفعيل الاشتراك.</p>
       </header>
 
-      {/* Status filter: one swipeable row on phones (no visible scrollbar), wrapping on wider screens. */}
-      <div
-        role="radiogroup"
-        aria-label="تصفية حسب الحالة"
-        className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden"
-      >
-        {FILTERS.map((f) => {
-          const active = f.value === status;
-          const count = counts.data?.[f.value];
-          return (
-            <button
-              key={f.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setParams({ status: f.value, page: null, sort: null })}
-              className={cn(
-                "inline-flex h-10 shrink-0 items-center gap-2 rounded-sm border px-3.5 text-ui transition-colors",
-                active
-                  ? "border-ink bg-ink text-ground"
-                  : "border-line-strong bg-surface text-ink-2 hover:border-ink-3 hover:text-ink",
-              )}
-            >
-              {f.label}
-              {count !== undefined && (
-                <span
-                  className={cn(
-                    "num min-w-5 rounded-full px-1.5 text-center text-meta font-semibold leading-5",
-                    active ? "bg-ground/15 text-ground" : f.value === "PENDING_REVIEW" && count > 0 ? "bg-accent-soft text-accent" : "bg-sunken text-ink-3",
-                  )}
-                >
-                  {count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <label className="relative w-full sm:w-80">
+      <div className="mt-6 flex items-center gap-2">
+        <label className="relative min-w-0 flex-1 sm:max-w-sm">
           <span className="sr-only">بحث باسم البراند أو الرقم المرجعي</span>
           <Search aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
           <input
@@ -364,21 +314,29 @@ export function PaymentsTable() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="ابحث باسم البراند أو الرقم المرجعي"
-            className="h-10 w-full rounded-sm border border-line-strong bg-surface ps-9 pe-3 text-ui text-ink placeholder:text-ink-3 hover:border-ink-3 focus:border-accent focus:outline-none"
+            className="h-11 w-full rounded-sm border border-line-strong bg-surface ps-9 pe-3 text-ui text-ink placeholder:text-ink-3 hover:border-ink-3 focus:border-accent focus:outline-none"
           />
         </label>
-        <label className="flex items-center gap-2 text-ui text-ink-2">
-          الترتيب
-          <select
-            value={sort}
-            onChange={(e) => setParams({ sort: e.target.value, page: null })}
-            className="h-10 rounded-sm border border-line-strong bg-surface px-3 text-ui text-ink hover:border-ink-3 focus:border-accent focus:outline-none"
-          >
-            <option value="oldest">الأقدم أولًا</option>
-            <option value="newest">الأحدث أولًا</option>
-          </select>
-        </label>
+        <PaymentFilters
+          status={status}
+          sort={sort}
+          counts={counts.data}
+          onApply={(next) =>
+            setParams({
+              status: next.status === DEFAULT_STATUS ? null : next.status,
+              sort: next.sort === defaultSort(next.status) ? null : next.sort,
+              page: null,
+            })
+          }
+        />
       </div>
+      <ActiveFilterChips
+        status={status}
+        sort={sort}
+        onClear={(what) =>
+          setParams(what === "sort" ? { sort: null, page: null } : { status: null, sort: null, page: null })
+        }
+      />
 
       <section aria-label="جدول المدفوعات" className="mt-4 overflow-hidden rounded-md border border-line bg-surface" aria-busy={list.isFetching}>
         {list.isPending ? (

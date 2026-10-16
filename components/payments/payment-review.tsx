@@ -284,7 +284,8 @@ export function PaymentReview({
                   maxLength={500}
                   placeholder="ملاحظة داخلية اختيارية، مثل: تمت المطابقة مع كشف الحساب"
                   aria-label="ملاحظة داخلية"
-                  className="mt-2 min-h-16 text-ui"
+                  rows={2}
+                  className="mt-2 h-16 min-h-0 resize-none text-ui"
                 />
               )}
             </fieldset>

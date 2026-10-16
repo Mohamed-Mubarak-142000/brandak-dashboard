@@ -1,67 +1,41 @@
 @import "tailwindcss";
 
 /*
- * Brandak operations desk — design tokens.
- * Neutral stone ground and warm ink, so the brand orange from the logo stays the only colour that speaks.
- * --brand is the exact logo orange (#F16B21): logo, stamp ring, large marks.
- * --accent is the same hue darkened to pass WCAG AA with white text (4.8:1): buttons, links, focus.
+ * Brandak operations desk — design tokens, taken from the logo: white and orange.
+ * --ground is the logo's off-white (#FEFCF7); panels are pure white with orange-tinted lines.
+ * --brand is the exact logo orange (#F16B21): logo, stamp, active indicators, counters, focus.
+ * --accent is the same orange deepened so white text on it stays readable (WCAG AA 4.8:1).
+ * Light only, on purpose: the brand is white and orange on every device.
  */
 :root {
   color-scheme: light;
 
-  --ground: #f2f1ee;
+  --ground: #fefcf7;
   --surface: #ffffff;
-  --sunken: #f7f6f3;
-  --line: #dfddd7;
-  --line-strong: #c5c1b8;
+  --sunken: #fff6ee;
+  --line: #f1e5d8;
+  --line-strong: #e3cfbb;
 
-  --ink: #1d1916;
-  --ink-2: #4c4640;
-  --ink-3: #6d665e;
+  --ink: #2a1d14;
+  --ink-2: #5b4839;
+  --ink-3: #7a6656;
 
   --brand: #f16b21;
   --accent: #c2500f;
   --accent-hover: #a5430b;
-  --accent-soft: #fdeee3;
+  --accent-soft: #ffeadb;
   --on-accent: #ffffff;
 
   --success: #1d7348;
-  --success-soft: #e2f0e7;
-  /* Amber-olive, kept clearly apart from the orange accent. */
+  --success-soft: #e3f2e8;
+  /* Amber-olive, kept clearly apart from the orange brand. */
   --warning: #7a5b00;
-  --warning-soft: #f6efd2;
+  --warning-soft: #f7f0d4;
   --danger: #b42318;
   --danger-hover: #971c13;
-  --danger-soft: #fbe6e3;
+  --danger-soft: #fde8e5;
 
-  --shadow-pop: 0 12px 32px -12px rgb(29 25 22 / 0.28), 0 2px 6px -2px rgb(29 25 22 / 0.12);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --ground: #141210;
-    --surface: #1c1916;
-    --sunken: #171512;
-    --line: #2f2a25;
-    --line-strong: #433d36;
-    --ink: #eeeae5;
-    --ink-2: #bfb8af;
-    --ink-3: #918a81;
-    --brand: #f16b21;
-    --accent: #f58a4b;
-    --accent-hover: #f8a470;
-    --accent-soft: #3b2415;
-    --on-accent: #1d0f06;
-    --success: #6cc596;
-    --success-soft: #16301f;
-    --warning: #dcbc5e;
-    --warning-soft: #33290d;
-    --danger: #f08a7e;
-    --danger-hover: #f5a59b;
-    --danger-soft: #3a1b17;
-    --shadow-pop: 0 12px 32px -12px rgb(0 0 0 / 0.6), 0 2px 6px -2px rgb(0 0 0 / 0.4);
-  }
+  --shadow-pop: 0 12px 32px -12px rgb(42 29 20 / 0.25), 0 2px 6px -2px rgb(42 29 20 / 0.1);
 }
 
 @theme inline {
@@ -131,7 +105,7 @@
     display: inline-block;
   }
   :focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--brand);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
   }
