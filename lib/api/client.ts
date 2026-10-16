@@ -39,6 +39,38 @@ interface RequestOptions {
   query?: Query;
 }
 
+/**
+ * One refresh for every request that hit a 401 at the same time. The refresh token rotates on
+ * each use and the API revokes the session if an old one is presented again, so concurrent
+ * refreshes would log the admin out.
+ */
+let refreshing: Promise<boolean> | null = null;
+function refreshSession() {
+  refreshing ??= fetch("/api/auth/refresh", { method: "POST", cache: "no-store" })
+    .then((res) => res.ok)
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+let redirecting = false;
+function goToLogin() {
+  if (redirecting || typeof window === "undefined") return;
+  redirecting = true;
+  const next = encodeURIComponent(window.location.pathname + window.location.search);
+  // Clear the cookies first: with a cookie left behind the route proxy sends /login straight
+  // back to /, which 401s again — an endless reload loop.
+  void fetch("/api/auth/logout", { method: "POST" })
+    .catch(() => undefined)
+    .finally(() => {
+      // Full reload on purpose: the session is gone, so no cached data should survive.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.assign(`/login?next=${next}`);
+    });
+}
+
 async function request<T>(path: string, { method = "GET", body, query }: RequestOptions = {}) {
   const qs = new URLSearchParams();
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -46,14 +78,18 @@ async function request<T>(path: string, { method = "GET", body, query }: Request
   }
   const url = `/api/proxy${path}${qs.size ? `?${qs}` : ""}`;
 
-  let res: Response;
-  try {
-    res = await fetch(url, {
+  const send = () =>
+    fetch(url, {
       method,
       headers: body === undefined ? undefined : { "content-type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
       cache: "no-store",
     });
+
+  let res: Response;
+  try {
+    res = await send();
+    if (res.status === 401 && (await refreshSession())) res = await send();
   } catch {
     throw new ApiError(0, "NETWORK", "لا يوجد اتصال بالإنترنت. تحقق من الشبكة ثم أعد المحاولة");
   }
@@ -62,12 +98,7 @@ async function request<T>(path: string, { method = "GET", body, query }: Request
   const json = await res.json().catch(() => null);
 
   if (!res.ok || !json?.success) {
-    if (res.status === 401 && typeof window !== "undefined") {
-      const next = encodeURIComponent(window.location.pathname + window.location.search);
-      // Full reload on purpose: the session is gone, so no cached data should survive.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign(`/login?next=${next}`);
-    }
+    if (res.status === 401) goToLogin();
     throw new ApiError(
       res.status,
       json?.error?.code ?? "UNKNOWN",
