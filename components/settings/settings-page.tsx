@@ -14,7 +14,7 @@ import { useUrlState } from "@/lib/use-url-state";
 import { DataTable, MobileRow, type TableFeatures } from "@/components/data/data-table";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu } from "@/components/data/row-menu";
-import { Badge } from "@/components/ui/badge";
+import { Badge, STORE_TYPE } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CategoryFormDialog } from "./category-form";
 import { PlanFormDialog } from "./plan-form";
@@ -138,6 +138,20 @@ function CategoriesTab() {
         }),
         catHelper.accessor("slug", { header: "الرابط", cell: (i) => <span className="num text-ink-2">{i.getValue()}</span> }),
         catHelper.accessor("parentId", { header: "تابع لـ", cell: (i) => parentName(i.getValue()) }),
+        catHelper.accessor((c) => c.storeTypes ?? [], {
+          id: "storeTypes",
+          header: "أنواع المتاجر",
+          cell: (i) =>
+            i.getValue().length ? (
+              <span className="flex flex-wrap gap-1">
+                {i.getValue().map((t) => (
+                  <Badge key={t}>{STORE_TYPE[t]?.label ?? t}</Badge>
+                ))}
+              </span>
+            ) : (
+              <span className="text-meta text-ink-3">كل الأنواع</span>
+            ),
+        }),
         catHelper.accessor("sortOrder", { header: "الترتيب", cell: (i) => <span className="num">{i.getValue()}</span> }),
         catHelper.accessor("isActive", { header: "الحالة", cell: (i) => <ActiveBadge active={i.getValue()} /> }),
         catHelper.display({ id: "actions", header: () => <span className="sr-only">إجراءات</span>, cell: (i) => <div className="flex justify-end">{menu(i.row.original)}</div> }),

@@ -9,6 +9,7 @@ import type { Category } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Input } from "@/components/ui/field";
+import { STORE_TYPE } from "@/components/ui/badge";
 
 const schema = z.object({
   nameAr: z.string().trim().min(2, "الاسم قصير جدًا").max(60),
@@ -16,6 +17,8 @@ const schema = z.object({
   slug: z.string().trim().regex(/^[a-z0-9-]{2,60}$/, "حروف إنجليزية صغيرة وأرقام و - فقط"),
   parentId: z.string().optional(),
   sortOrder: z.coerce.number({ message: "أدخل رقمًا" }).int().min(0),
+  // Unchecked boxes give false; nothing ticked = offered to every store type.
+  storeTypes: z.union([z.array(z.string()), z.literal(false), z.string()]).transform((v) => (v === false ? [] : typeof v === "string" ? [v] : v)),
 });
 type Values = z.input<typeof schema>;
 
@@ -40,13 +43,13 @@ export function CategoryFormDialog({
   } = useForm<Values>({
     resolver: zodResolver(schema),
     values: category
-      ? { nameAr: category.nameAr, nameEn: category.nameEn, slug: category.slug, parentId: category.parentId ?? "", sortOrder: category.sortOrder }
-      : { nameAr: "", nameEn: "", slug: "", parentId: "", sortOrder: 0 },
+      ? { nameAr: category.nameAr, nameEn: category.nameEn, slug: category.slug, parentId: category.parentId ?? "", sortOrder: category.sortOrder, storeTypes: category.storeTypes ?? [] }
+      : { nameAr: "", nameEn: "", slug: "", parentId: "", sortOrder: 0, storeTypes: [] },
   });
 
   const save = useAction({
     run: (v: z.output<typeof schema>) => {
-      const body = { nameAr: v.nameAr, nameEn: v.nameEn, slug: v.slug, sortOrder: v.sortOrder, ...(v.parentId ? { parentId: v.parentId } : {}) };
+      const body = { nameAr: v.nameAr, nameEn: v.nameEn, slug: v.slug, sortOrder: v.sortOrder, storeTypes: v.storeTypes, ...(v.parentId ? { parentId: v.parentId } : {}) };
       return editing ? api.patch(`/admin/categories/${category!._id}`, body) : api.post("/admin/categories", body);
     },
     success: editing ? "تم حفظ التصنيف" : "تمت إضافة التصنيف",
@@ -97,6 +100,18 @@ export function CategoryFormDialog({
         <Field label="ترتيب العرض" hint="الأصغر يظهر أولًا" error={errors.sortOrder?.message}>
           {(a) => <Input {...a} {...register("sortOrder")} type="number" inputMode="numeric" dir="ltr" className="text-start" />}
         </Field>
+        <fieldset className="sm:col-span-2">
+          <legend className="mb-2 text-ui text-ink-2">يظهر لأنواع المتاجر</legend>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(STORE_TYPE).map(([value, t]) => (
+              <label key={value} className="flex h-10 cursor-pointer items-center gap-2 rounded-full border border-line-strong px-4 text-ui has-[:checked]:border-brand has-[:checked]:bg-accent-soft has-[:checked]:text-accent">
+                <input type="checkbox" value={value} {...register("storeTypes")} className="accent-[var(--accent)]" />
+                {t.plural}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-meta text-ink-3">لو مفيش اختيار، القسم يظهر لكل الأنواع.</p>
+        </fieldset>
         <div className="sm:col-span-2">
           <Field label="تصنيف رئيسي" hint="اتركه فارغًا ليكون تصنيفًا رئيسيًا">
             {(a) => (

@@ -258,6 +258,8 @@ export interface Category {
   icon?: string;
   sortOrder: number;
   isActive: boolean;
+  /** Store types offered this category when opening a store; empty = all types. */
+  storeTypes?: StoreType[];
 }
 
 // ---------- Analytics ----------
