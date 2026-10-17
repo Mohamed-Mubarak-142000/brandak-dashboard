@@ -9,6 +9,18 @@ import { ErrorState, Skeleton } from "@/components/ui/states";
 
 /** Every action the API records, in words an admin reads at a glance. */
 export const AUDIT_ACTIONS: Record<string, string> = {
+  BRAND_DELETED: "حذف المتجر",
+  BRAND_RESTORED: "استرجع المتجر",
+  USER_DELETED: "حذف الحساب",
+  USER_RESTORED: "استرجع الحساب",
+  CATEGORY_DELETED: "حذف التصنيف",
+  CATEGORY_RESTORED: "استرجع التصنيف",
+  PLAN_DELETED: "حذف الباقة",
+  PLAN_RESTORED: "استرجع الباقة",
+  REPORT_DELETED: "حذف البلاغ",
+  REPORT_RESTORED: "استرجع البلاغ",
+  REVIEW_DELETED: "حذف التقييم",
+  REVIEW_RESTORED: "استرجع التقييم",
   BRAND_APPLIED: "قدّم طلب براند",
   BRAND_RESUBMITTED: "أعاد إرسال طلب البراند",
   BRAND_APPROVED: "وافق على البراند",

@@ -13,6 +13,7 @@ import { formatDateTime, formatRelative } from "@/lib/format";
 import { useUrlState } from "@/lib/use-url-state";
 import { DataTable, MobileRow, type TableFeatures } from "@/components/data/data-table";
 import { FilterChips, FilterDialog, type FilterSection } from "@/components/data/filter-dialog";
+import { DELETED_FILTER, useSoftDelete } from "@/components/data/use-soft-delete";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu, type RowMenuItem } from "@/components/data/row-menu";
 import { Badge, REPORT_STATUS } from "@/components/ui/badge";
@@ -30,7 +31,7 @@ export const REPORT_REASON: Record<string, string> = {
   FRAUD: "احتيال",
   OTHER: "سبب آخر",
 };
-const TARGET_LABEL: Record<string, string> = { REVIEW: "تقييم", PRODUCT: "منتج", BRAND: "براند" };
+const TARGET_LABEL: Record<string, string> = { REVIEW: "تقييم", PRODUCT: "منتج", BRAND: "متجر" };
 
 const STATUS_OPTIONS = [
   { value: "OPEN", label: "مفتوحة", hint: "تنتظر قرارك" },
@@ -54,14 +55,17 @@ export function ReportsPage() {
   const url = useUrlState();
   const status = url.get("status") ?? "OPEN";
   const type = url.get("type") ?? "ALL";
+  const deleted = url.get("deleted") ?? "no";
   const [ask, setAsk] = useState<Ask | null>(null);
   const invalidate = [["reports"]];
 
   const list = useQuery({
-    queryKey: ["reports", status, type, url.page],
+    queryKey: ["reports", status, type, deleted, url.page],
     queryFn: () =>
       api.page<AdminReport>("/admin/reports", {
-        status: status === "ALL" ? undefined : status,
+        // Deleted reports are always handled ones, so the "open" default would hide them all.
+        status: status === "ALL" || deleted === "yes" ? undefined : status,
+        deleted: deleted === "yes" ? true : undefined,
         targetType: type === "ALL" ? undefined : type,
         page: url.page,
         limit: PAGE_SIZE,
@@ -94,8 +98,21 @@ export function ReportsPage() {
   const sections: FilterSection[] = [
     { key: "status", label: "حالة البلاغ", options: STATUS_OPTIONS, defaultValue: "OPEN" },
     { key: "type", label: "نوع المحتوى", options: TYPE_OPTIONS, defaultValue: "ALL" },
+    DELETED_FILTER,
   ];
-  const values = { status, type };
+  const values = { status, type, deleted };
+  const delReport = useSoftDelete({
+    base: "/admin/reports",
+    noun: "البلاغ",
+    invalidate,
+    warning: "هيختفي من قايمة البلاغات. القرار اللي اتاخد عليه بيفضل في سجل العمليات.",
+  });
+  const delReview = useSoftDelete({
+    base: "/admin/reviews",
+    noun: "التقييم",
+    invalidate,
+    warning: "هيختفي من صفحة المنتج وتقييمات العميل، وهيتعاد حساب تقييم المنتج والمتجر.",
+  });
 
   const itemsFor = (r: AdminReport): RowMenuItem[] => {
     const open = r.status === "OPEN";
@@ -107,6 +124,9 @@ export function ReportsPage() {
       { label: "إزالة المنتج", icon: PackageX, separated: true, danger: true, hidden: r.targetType !== "PRODUCT" || !t || t.status === "ARCHIVED", onSelect: () => setAsk({ kind: "takedown", report: r }) },
       { label: "فتح صفحة البراند", icon: Store, hidden: !(r.targetType === "BRAND" || t?.brandId), onSelect: () => router.push(`/brands/${r.targetType === "BRAND" ? r.targetId : t!.brandId}`) },
       { label: "رفض البلاغ", icon: XCircle, separated: true, danger: true, hidden: !open, onSelect: () => setAsk({ kind: "dismiss", report: r }) },
+      ...(r.targetType === "REVIEW" && t ? delReview.menuItems({ id: r.targetId, name: t.title }, !!t.deleted) : []),
+      // Only handled reports can be deleted (the API refuses open ones).
+      ...(open && !r.deletedAt ? [] : delReport.menuItems({ id: r._id, name: REPORT_REASON[r.reason] ?? r.reason }, !!r.deletedAt)),
     ];
   };
 
@@ -128,6 +148,7 @@ export function ReportsPage() {
                     {r.target?.subtitle && ` — ${r.target.subtitle}`}
                     {r.target?.status === "HIDDEN" && " — مخفي"}
                     {r.target?.status === "ARCHIVED" && " — أُزيل"}
+                    {r.target?.deleted && " — محذوف"}
                   </span>
                 </span>
               </span>
@@ -173,16 +194,16 @@ export function ReportsPage() {
 
   return (
     <PageShell>
-      <PageHeader title="البلاغات" description="بلاغات العملاء عن التقييمات والمنتجات والبراندات. كل قرار يُسجَّل في سجل العمليات." />
+      <PageHeader title="البلاغات" description="بلاغات العملاء عن التقييمات والمنتجات والمتاجر. كل قرار يُسجَّل في سجل العمليات." />
       <div className="mt-6 flex items-center gap-2">
         <FilterDialog
           title="تصفية البلاغات"
           sections={sections}
           values={values}
-          onApply={(v) => url.set({ status: v.status === "OPEN" ? null : v.status, type: v.type === "ALL" ? null : v.type })}
+          onApply={(v) => url.set({ status: v.status === "OPEN" ? null : v.status, type: v.type === "ALL" ? null : v.type, deleted: v.deleted === "yes" ? "yes" : null })}
         />
       </div>
-      <FilterChips sections={sections} values={values} onClear={(key) => url.set(key === "all" ? { status: null, type: null } : { [key]: null })} />
+      <FilterChips sections={sections} values={values} onClear={(key) => url.set(key === "all" ? { status: null, type: null, deleted: null } : { [key]: null })} />
       <div className="mt-4">
         <DataTable
           label="جدول البلاغات"
@@ -236,6 +257,8 @@ export function ReportsPage() {
           onConfirm={(reason) => takedown.mutate({ id: ask.report.targetId, reason })}
         />
       )}
+      {delReport.dialog}
+      {delReview.dialog}
     </PageShell>
   );
 }

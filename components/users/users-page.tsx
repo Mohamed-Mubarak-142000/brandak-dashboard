@@ -12,6 +12,7 @@ import { formatDate, formatPhone } from "@/lib/format";
 import { useUrlState } from "@/lib/use-url-state";
 import { DataTable, MobileRow, type TableFeatures } from "@/components/data/data-table";
 import { FilterChips, FilterDialog, type FilterSection } from "@/components/data/filter-dialog";
+import { DELETED_FILTER, useSoftDelete } from "@/components/data/use-soft-delete";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu } from "@/components/data/row-menu";
 import { SearchInput } from "@/components/data/search-input";
@@ -43,12 +44,20 @@ export function UsersPage() {
   const url = useUrlState();
   const toast = useToast();
   const status = url.get("status") ?? "ALL";
+  const deleted = url.get("deleted") ?? "no";
   const q = url.get("q") ?? "";
   const [confirm, setConfirm] = useState<AdminUser | null>(null);
 
   const list = useQuery({
-    queryKey: ["users", status, q, url.page],
-    queryFn: () => api.page<AdminUser>("/admin/users", { status: status === "ALL" ? undefined : status, q, page: url.page, limit: PAGE_SIZE }),
+    queryKey: ["users", status, deleted, q, url.page],
+    queryFn: () =>
+      api.page<AdminUser>("/admin/users", {
+        status: status === "ALL" ? undefined : status,
+        deleted: deleted === "yes" ? true : undefined,
+        q,
+        page: url.page,
+        limit: PAGE_SIZE,
+      }),
     placeholderData: keepPreviousData,
   });
 
@@ -63,7 +72,14 @@ export function UsersPage() {
     onDone: () => setConfirm(null),
   });
 
-  const sections: FilterSection[] = [{ key: "status", label: "حالة الحساب", options: STATUS_OPTIONS, defaultValue: "ALL" }];
+  const sections: FilterSection[] = [{ key: "status", label: "حالة الحساب", options: STATUS_OPTIONS, defaultValue: "ALL" }, DELETED_FILTER];
+  const filterValues = { status, deleted };
+  const del = useSoftDelete({
+    base: "/admin/users",
+    noun: "الحساب",
+    invalidate: [["users"]],
+    warning: "هيتسجّل خروجه من كل الأجهزة ومش هيقدر يدخل تاني. طلباته القديمة بتفضل عند المتاجر.",
+  });
 
   const menu = (u: AdminUser) => (
     <RowMenu
@@ -78,8 +94,10 @@ export function UsersPage() {
           },
         },
         { label: "سجل إجراءات الحساب", icon: ScrollText, onSelect: () => router.push(`/audit?entity=User&id=${u.id}`) },
-        { label: "إيقاف الحساب", icon: PauseCircle, danger: true, separated: true, hidden: u.status !== "ACTIVE" || u.roles.includes("SUPER_ADMIN"), onSelect: () => setConfirm(u) },
-        { label: "إعادة تفعيل الحساب", icon: PlayCircle, separated: true, hidden: u.status !== "SUSPENDED", onSelect: () => setConfirm(u) },
+        { label: "إيقاف الحساب", icon: PauseCircle, danger: true, separated: true, hidden: !!u.deletedAt || u.status !== "ACTIVE" || u.roles.includes("SUPER_ADMIN"), onSelect: () => setConfirm(u) },
+        { label: "إعادة تفعيل الحساب", icon: PlayCircle, separated: true, hidden: !!u.deletedAt || u.status !== "SUSPENDED", onSelect: () => setConfirm(u) },
+        // Admin accounts are protected (the API refuses too).
+        ...(u.roles.includes("SUPER_ADMIN") ? [] : del.menuItems({ id: u.id, name: u.name }, !!u.deletedAt)),
       ]}
     />
   );
@@ -132,9 +150,14 @@ export function UsersPage() {
       <PageHeader title="المستخدمون" description="كل الحسابات المسجّلة: عملاء وأصحاب براندات وفريق الإدارة." />
       <div className="mt-6 flex items-center gap-2">
         <SearchInput value={q} onChange={(v) => url.set({ q: v })} placeholder="الاسم أو البريد أو الهاتف" label="بحث بالاسم أو البريد أو الهاتف" />
-        <FilterDialog title="تصفية المستخدمين" sections={sections} values={{ status }} onApply={(v) => url.set({ status: v.status === "ALL" ? null : v.status })} />
+        <FilterDialog
+          title="تصفية المستخدمين"
+          sections={sections}
+          values={filterValues}
+          onApply={(v) => url.set({ status: v.status === "ALL" ? null : v.status, deleted: v.deleted === "yes" ? "yes" : null })}
+        />
       </div>
-      <FilterChips sections={sections} values={{ status }} onClear={() => url.set({ status: null })} />
+      <FilterChips sections={sections} values={filterValues} onClear={(key) => url.set(key === "all" ? { status: null, deleted: null } : { [key]: null })} />
       <div className="mt-4">
         <DataTable
           label="جدول المستخدمين"
@@ -157,6 +180,7 @@ export function UsersPage() {
           )}
         />
       </div>
+      {del.dialog}
       <ConfirmDialog
         open={!!confirm}
         onOpenChange={(o) => !o && setConfirm(null)}

@@ -15,6 +15,7 @@ import { Badge, BRAND_STATUS, PAYMENT_STATUS, STORE_TYPE, SUBSCRIPTION_STATUS } 
 import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import { ActivityList } from "@/components/audit/activity-list";
+import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { ACTION_LABEL, BRAND_ACTIONS, useBrandActions } from "./brand-actions";
 
 const SOCIAL_LABEL: Record<string, string> = { instagram: "إنستجرام", facebook: "فيسبوك", tiktok: "تيك توك", website: "الموقع" };
@@ -35,6 +36,12 @@ export function BrandDetail() {
     queryFn: () => api.page<AuditEntry>("/admin/audit-logs", { entityType: "Brand", entityId: id, limit: 30 }),
   });
   const actions = useBrandActions();
+  const del = useSoftDelete({
+    base: "/admin/brands",
+    noun: "المتجر",
+    invalidate: [["brands"], ["brand"]],
+    warning: "هيختفي من التطبيق فورًا وصاحبه مش هيقدر يدخل لوحة المتجر. الطلبات القديمة مش بتتأثر.",
+  });
 
   if (brand.isPending) return <DetailSkeleton />;
   if (brand.isError || !brand.data) {
@@ -48,7 +55,7 @@ export function BrandDetail() {
   const b = brand.data;
   const owner = typeof b.ownerUserId === "object" ? b.ownerUserId : null;
   const status = BRAND_STATUS[b.status];
-  const allowed = BRAND_ACTIONS[b.status];
+  const allowed = b.deletedAt ? [] : BRAND_ACTIONS[b.status];
   const s = b.settings;
 
   return (
@@ -71,18 +78,38 @@ export function BrandDetail() {
             <>مخفي عن العملاء. أُرسل الطلب في {formatDate(b.createdAt)}</>
           )
         }
-        actions={allowed.map((kind) => (
-          <Button
-            key={kind}
-            variant={kind === "approve" || kind === "reinstate" ? "primary" : "danger"}
-            loading={actions.pendingKind === kind}
-            disabled={actions.pending}
-            onClick={() => actions.run(kind, b)}
-          >
-            {ACTION_LABEL[kind]}
-          </Button>
-        ))}
+        actions={
+          <>
+            {allowed.map((kind) => (
+              <Button
+                key={kind}
+                variant={kind === "approve" || kind === "reinstate" ? "primary" : "danger"}
+                loading={actions.pendingKind === kind}
+                disabled={actions.pending}
+                onClick={() => actions.run(kind, b)}
+              >
+                {ACTION_LABEL[kind]}
+              </Button>
+            ))}
+            {b.deletedAt ? (
+              <Button variant="primary" loading={del.pending} onClick={() => del.restore({ id: b._id, name: b.name })}>
+                استرجاع المتجر
+              </Button>
+            ) : (
+              <Button variant="danger" disabled={del.pending} onClick={() => del.askDelete({ id: b._id, name: b.name })}>
+                حذف المتجر
+              </Button>
+            )}
+          </>
+        }
       />
+
+      {b.deletedAt && (
+        <div className="mt-6 rounded-sm border border-danger/30 bg-danger-soft px-4 py-3 text-ui">
+          <p className="font-semibold text-danger">المتجر محذوف منذ {formatDate(b.deletedAt)}</p>
+          <p className="mt-1 text-ink">مخفي عن العملاء وصاحبه مش قادر يدخل لوحة المتجر. استرجعه عشان يرجع زي ما كان.</p>
+        </div>
+      )}
 
       {b.statusReason && (b.status === "REJECTED" || b.status === "SUSPENDED") && (
         <div className="mt-6 rounded-sm border border-danger/30 bg-danger-soft px-4 py-3 text-ui">
@@ -236,6 +263,7 @@ export function BrandDetail() {
         </div>
       </div>
       {actions.dialog}
+      {del.dialog}
     </PageShell>
   );
 }

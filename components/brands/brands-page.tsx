@@ -13,8 +13,9 @@ import { formatDate, formatPhone } from "@/lib/format";
 import { useUrlState } from "@/lib/use-url-state";
 import { DataTable, MobileRow, type TableFeatures } from "@/components/data/data-table";
 import { FilterChips, FilterDialog, type FilterSection } from "@/components/data/filter-dialog";
+import { DELETED_FILTER, useSoftDelete } from "@/components/data/use-soft-delete";
 import { PageHeader, PageShell } from "@/components/data/page-header";
-import { RowMenu } from "@/components/data/row-menu";
+import { RowMenu, type RowMenuItem } from "@/components/data/row-menu";
 import { SearchInput } from "@/components/data/search-input";
 import { Badge, BRAND_STATUS, STORE_TYPE } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,16 +59,18 @@ export function BrandsPage() {
   const url = useUrlState();
   const status = url.get("status") ?? "ALL";
   const storeType = url.get("storeType") ?? "ALL";
+  const deleted = url.get("deleted") ?? "no";
   const q = url.get("q") ?? "";
   const actions = useBrandActions();
   const runAction = actions.run;
 
   const list = useQuery({
-    queryKey: ["brands", status, storeType, q, url.page],
+    queryKey: ["brands", status, storeType, deleted, q, url.page],
     queryFn: () =>
       api.page<AdminBrand>("/admin/brands", {
         status: status === "ALL" ? undefined : status,
         storeType: storeType === "ALL" ? undefined : storeType,
+        deleted: deleted === "yes" ? true : undefined,
         q,
         page: url.page,
         limit: PAGE_SIZE,
@@ -91,7 +94,15 @@ export function BrandsPage() {
   const sections: FilterSection[] = [
     { key: "status", label: "الحالة", options: STATUS_OPTIONS, defaultValue: "ALL", counts: counts.data },
     { key: "storeType", label: "نوع المتجر", options: TYPE_OPTIONS, defaultValue: "ALL", columns: 2 },
+    DELETED_FILTER,
   ];
+  const filterValues = { status, storeType, deleted };
+  const del = useSoftDelete({
+    base: "/admin/brands",
+    noun: "المتجر",
+    invalidate: [["brands"], ["brand"]],
+    warning: "هيختفي من التطبيق فورًا وصاحبه مش هيقدر يدخل لوحة المتجر. الطلبات القديمة مش بتتأثر.",
+  });
 
   const columns = useMemo(
     () =>
@@ -145,12 +156,14 @@ export function BrandsPage() {
                 <Button size="sm" variant={pending ? "primary" : "ghost"} onClick={(e) => { e.stopPropagation(); router.push(`/brands/${b._id}`); }}>
                   {pending ? "مراجعة" : "عرض"}
                 </Button>
-                <BrandMenu brand={b} onAction={(kind) => runAction(kind, b)} onOpen={() => router.push(`/brands/${b._id}`)} />
+                <BrandMenu brand={b} onAction={(kind) => runAction(kind, b)} onOpen={() => router.push(`/brands/${b._id}`)} extra={del.menuItems({ id: b._id, name: b.name }, !!b.deletedAt)} />
               </div>
             );
           },
         }),
       ]),
+    // del.menuItems only calls stable setters/mutate, so the first render's closure stays valid.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [router, runAction],
   );
 
@@ -161,9 +174,20 @@ export function BrandsPage() {
       <PageHeader title="المتاجر" description="راجع طلبات المتاجر الجديدة (براندات ومعارض ومخازن ومحلات) وتابع حالة كل متجر." />
       <div className="mt-6 flex items-center gap-2">
         <SearchInput value={q} onChange={(v) => url.set({ q: v })} placeholder="ابحث باسم البراند" label="بحث باسم البراند" />
-        <FilterDialog title="تصفية البراندات" sections={sections} values={{ status }} onApply={(v) => url.set({ status: v.status === "ALL" ? null : v.status })} />
+        <FilterDialog
+          title="تصفية المتاجر"
+          sections={sections}
+          values={filterValues}
+          onApply={(v) =>
+            url.set({
+              status: v.status === "ALL" ? null : v.status,
+              storeType: v.storeType === "ALL" ? null : v.storeType,
+              deleted: v.deleted === "yes" ? "yes" : null,
+            })
+          }
+        />
       </div>
-      <FilterChips sections={sections} values={{ status }} onClear={() => url.set({ status: null })} />
+      <FilterChips sections={sections} values={filterValues} onClear={(key) => url.set(key === "all" ? { status: null, storeType: null, deleted: null } : { [key]: null })} />
       <div className="mt-4">
         <DataTable
           label="جدول البراندات"
@@ -187,20 +211,32 @@ export function BrandsPage() {
               title={b.name}
               meta={[STORE_TYPE[b.storeType ?? "BRAND"]?.label, ownerOf(b)?.name].filter(Boolean).join(" · ")}
               badge={<Badge tone={BRAND_STATUS[b.status].tone}>{BRAND_STATUS[b.status].label}</Badge>}
-              actions={<BrandMenu brand={b} onAction={(kind) => runAction(kind, b)} onOpen={() => router.push(`/brands/${b._id}`)} />}
+              actions={<BrandMenu brand={b} onAction={(kind) => runAction(kind, b)} onOpen={() => router.push(`/brands/${b._id}`)} extra={del.menuItems({ id: b._id, name: b.name }, !!b.deletedAt)} />}
             />
           )}
         />
       </div>
       {actions.dialog}
+      {del.dialog}
     </PageShell>
   );
 }
 
 const EMPTY: AdminBrand[] = [];
 
-function BrandMenu({ brand, onAction, onOpen }: { brand: AdminBrand; onAction: (kind: BrandActionKind) => void; onOpen: () => void }) {
-  const allowed = BRAND_ACTIONS[brand.status];
+function BrandMenu({
+  brand,
+  onAction,
+  onOpen,
+  extra,
+}: {
+  brand: AdminBrand;
+  onAction: (kind: BrandActionKind) => void;
+  onOpen: () => void;
+  extra: RowMenuItem[];
+}) {
+  // A deleted store only offers "restore"; decisions come back after it is restored.
+  const allowed = brand.deletedAt ? [] : BRAND_ACTIONS[brand.status];
   return (
     <RowMenu
       label={`إجراءات ${brand.name}`}
@@ -210,6 +246,7 @@ function BrandMenu({ brand, onAction, onOpen }: { brand: AdminBrand; onAction: (
         { label: ACTION_LABEL.reinstate, icon: PlayCircle, onSelect: () => onAction("reinstate"), hidden: !allowed.includes("reinstate"), separated: true },
         { label: ACTION_LABEL.reject, icon: XCircle, onSelect: () => onAction("reject"), hidden: !allowed.includes("reject"), danger: true },
         { label: ACTION_LABEL.suspend, icon: PauseCircle, onSelect: () => onAction("suspend"), hidden: !allowed.includes("suspend"), danger: true, separated: true },
+        ...extra,
       ]}
     />
   );

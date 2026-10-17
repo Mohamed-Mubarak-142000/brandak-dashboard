@@ -83,6 +83,8 @@ export interface ShippingZone {
 
 export interface AdminBrand {
   _id: string;
+  /** Set when soft-deleted by an admin. */
+  deletedAt?: string | null;
   name: string;
   slug: string;
   storeType?: StoreType;
@@ -188,6 +190,8 @@ export type ReportStatus = "OPEN" | "RESOLVED" | "DISMISSED";
 
 export interface AdminReport {
   _id: string;
+  /** Set when soft-deleted by an admin. */
+  deletedAt?: string | null;
   targetType: ReportTarget;
   targetId: string;
   reason: string;
@@ -203,6 +207,8 @@ export interface AdminReport {
     imageUrl?: string | null;
     productId?: string;
     brandId?: string;
+    /** The reported store/review was soft-deleted. */
+    deleted?: boolean;
   } | null;
 }
 
@@ -210,6 +216,8 @@ export interface AdminReport {
 
 export interface AdminUser {
   id: string;
+  /** Set when soft-deleted by an admin. */
+  deletedAt?: string | null;
   name: string;
   email: string;
   phone: string;
@@ -237,6 +245,8 @@ export interface AuditEntry {
 
 export interface Plan {
   _id: string;
+  /** Set when soft-deleted by an admin. */
+  deletedAt?: string | null;
   code: string;
   nameAr: string;
   nameEn: string;
@@ -251,6 +261,8 @@ export interface Plan {
 
 export interface Category {
   _id: string;
+  /** Set when soft-deleted by an admin. */
+  deletedAt?: string | null;
   nameAr: string;
   nameEn: string;
   slug: string;

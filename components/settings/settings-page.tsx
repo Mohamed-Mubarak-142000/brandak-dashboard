@@ -16,6 +16,7 @@ import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu } from "@/components/data/row-menu";
 import { Badge, STORE_TYPE } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { CategoryFormDialog } from "./category-form";
 import { PlanFormDialog } from "./plan-form";
 
@@ -26,10 +27,42 @@ const NO_CATS: Category[] = [];
 
 const ActiveBadge = ({ active }: { active: boolean }) => (active ? <Badge tone="success">مفعّل</Badge> : <Badge>مخفي</Badge>);
 
+/** "الحالية / المحذوفة" switch for the unpaginated settings tables. */
+function DeletedToggle({ value, onChange, deletedCount }: { value: boolean; onChange: (v: boolean) => void; deletedCount: number }) {
+  return (
+    <div role="tablist" aria-label="عرض" className="inline-flex rounded-sm border border-line bg-sunken p-1 text-ui">
+      {[
+        { v: false, label: "الحالية" },
+        { v: true, label: `المحذوفة (${deletedCount})` },
+      ].map((o) => (
+        <button
+          key={String(o.v)}
+          type="button"
+          role="tab"
+          aria-selected={value === o.v}
+          onClick={() => onChange(o.v)}
+          className={cn("h-8 rounded-sm px-3", value === o.v ? "bg-surface font-semibold text-ink shadow-sm" : "text-ink-3")}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function PlansTab() {
   const [editing, setEditing] = useState<Plan | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const plans = useQuery({ queryKey: ["plans"], queryFn: () => api.get<Plan[]>("/admin/plans") });
+  const [showDeleted, setShowDeleted] = useState(false);
+  const allPlans = plans.data ?? NO_PLANS;
+  const visiblePlans = useMemo(() => allPlans.filter((p) => !!p.deletedAt === showDeleted), [allPlans, showDeleted]);
+  const del = useSoftDelete({
+    base: "/admin/plans",
+    noun: "الباقة",
+    invalidate: [["plans"]],
+    warning: "مش هتظهر للمتاجر الجديدة، والاشتراكات الحالية بتكمّل عادي.",
+  });
   const toggle = useAction({
     run: (p: Plan) => api.patch(`/admin/plans/${p._id}`, { isActive: !p.isActive }),
     success: (p) => ({ title: p.isActive ? "تم إخفاء الباقة" : "تم تفعيل الباقة", description: p.isActive ? "لن تظهر للبراندات الجديدة؛ الاشتراكات الحالية لا تتأثر." : p.nameAr }),
@@ -44,8 +77,9 @@ function PlansTab() {
     <RowMenu
       label={`إجراءات باقة ${p.nameAr}`}
       items={[
-        { label: "تعديل", icon: Pencil, onSelect: () => open(p) },
-        { label: p.isActive ? "إخفاء الباقة" : "تفعيل الباقة", icon: p.isActive ? EyeOff : Eye, danger: p.isActive, separated: true, onSelect: () => toggle.mutate(p) },
+        { label: "تعديل", icon: Pencil, onSelect: () => open(p), hidden: !!p.deletedAt },
+        { label: p.isActive ? "إخفاء الباقة" : "تفعيل الباقة", icon: p.isActive ? EyeOff : Eye, danger: p.isActive, separated: true, onSelect: () => toggle.mutate(p), hidden: !!p.deletedAt },
+        ...del.menuItems({ id: p._id, name: p.nameAr }, !!p.deletedAt),
       ]}
     />
   );
@@ -75,7 +109,10 @@ function PlansTab() {
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-ui text-ink-2">الباقات التي يختار منها أصحاب البراندات. تغيير السعر لا يمس الاشتراكات الحالية.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <DeletedToggle value={showDeleted} onChange={setShowDeleted} deletedCount={allPlans.filter((p) => p.deletedAt).length} />
+          <p className="text-ui text-ink-2">الباقات اللي بيختار منها أصحاب المتاجر. تغيير السعر مش بيأثر على الاشتراكات الحالية.</p>
+        </div>
         <Button variant="primary" onClick={() => open(null)}>
           <Plus aria-hidden className="size-4" />
           باقة جديدة
@@ -84,16 +121,17 @@ function PlansTab() {
       <DataTable
         label="جدول الباقات"
         columns={columns}
-        data={plans.data ?? NO_PLANS}
+        data={visiblePlans}
         getRowId={(p) => p._id}
-        onRowClick={(p) => open(p)}
+        onRowClick={(p) => !p.deletedAt && open(p)}
         isPending={plans.isPending}
         error={plans.error}
         onRetry={() => plans.refetch()}
-        empty={{ title: "لا توجد باقات", description: "أضف أول باقة ليستطيع أصحاب البراندات الاشتراك." }}
+        empty={showDeleted ? { title: "مفيش باقات محذوفة" } : { title: "لا توجد باقات", description: "أضف أول باقة ليستطيع أصحاب المتاجر الاشتراك." }}
         mobileItem={(p) => <MobileRow title={p.nameAr} trailing={<span className="num">{formatMoney(p.priceMonthly)}</span>} meta={`حتى ${p.limits.maxActiveProducts} منتج`} badge={<ActiveBadge active={p.isActive} />} actions={menu(p)} />}
       />
       <PlanFormDialog plan={editing} open={formOpen} onOpenChange={setFormOpen} />
+      {del.dialog}
     </>
   );
 }
@@ -113,13 +151,22 @@ function CategoriesTab() {
     setFormOpen(true);
   };
   const all = cats.data ?? NO_CATS;
+  const [showDeleted, setShowDeleted] = useState(false);
+  const visibleCats = useMemo(() => all.filter((c) => !!c.deletedAt === showDeleted), [all, showDeleted]);
+  const del = useSoftDelete({
+    base: "/admin/categories",
+    noun: "التصنيف",
+    invalidate: [["categories"]],
+    warning: "مش هيظهر للعملاء ولا لأصحاب المتاجر. المنتجات اللي عليه بتفضل موجودة.",
+  });
   const parentName = (id: string | null) => (id ? all.find((c) => c._id === id)?.nameAr ?? "—" : "—");
   const menu = (c: Category) => (
     <RowMenu
       label={`إجراءات تصنيف ${c.nameAr}`}
       items={[
-        { label: "تعديل", icon: Pencil, onSelect: () => open(c) },
-        { label: c.isActive ? "إخفاء التصنيف" : "تفعيل التصنيف", icon: c.isActive ? EyeOff : Eye, danger: c.isActive, separated: true, onSelect: () => toggle.mutate(c) },
+        { label: "تعديل", icon: Pencil, onSelect: () => open(c), hidden: !!c.deletedAt },
+        { label: c.isActive ? "إخفاء التصنيف" : "تفعيل التصنيف", icon: c.isActive ? EyeOff : Eye, danger: c.isActive, separated: true, onSelect: () => toggle.mutate(c), hidden: !!c.deletedAt },
+        ...del.menuItems({ id: c._id, name: c.nameAr }, !!c.deletedAt),
       ]}
     />
   );
@@ -163,7 +210,10 @@ function CategoriesTab() {
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <p className="text-ui text-ink-2">تصنيفات البراندات والمنتجات التي يتصفح بها العملاء.</p>
+        <div className="flex flex-wrap items-center gap-3">
+          <DeletedToggle value={showDeleted} onChange={setShowDeleted} deletedCount={all.filter((c) => c.deletedAt).length} />
+          <p className="text-ui text-ink-2">تصنيفات المتاجر والمنتجات اللي العملاء بيتصفحوا بيها.</p>
+        </div>
         <Button variant="primary" onClick={() => open(null)}>
           <Plus aria-hidden className="size-4" />
           تصنيف جديد
@@ -172,16 +222,17 @@ function CategoriesTab() {
       <DataTable
         label="جدول التصنيفات"
         columns={columns}
-        data={all}
+        data={visibleCats}
         getRowId={(c) => c._id}
-        onRowClick={(c) => open(c)}
+        onRowClick={(c) => !c.deletedAt && open(c)}
         isPending={cats.isPending}
         error={cats.error}
         onRetry={() => cats.refetch()}
-        empty={{ title: "لا توجد تصنيفات", description: "أضف تصنيفًا ليختار منه أصحاب البراندات." }}
+        empty={showDeleted ? { title: "مفيش تصنيفات محذوفة" } : { title: "لا توجد تصنيفات", description: "أضف تصنيفًا ليختار منه أصحاب المتاجر." }}
         mobileItem={(c) => <MobileRow title={c.nameAr} meta={c.nameEn} badge={<ActiveBadge active={c.isActive} />} actions={menu(c)} />}
       />
-      <CategoryFormDialog category={editing} categories={all} open={formOpen} onOpenChange={setFormOpen} />
+      <CategoryFormDialog category={editing} categories={all.filter((c) => !c.deletedAt)} open={formOpen} onOpenChange={setFormOpen} />
+      {del.dialog}
     </>
   );
 }
