@@ -32,6 +32,13 @@ export const PAYMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
   CANCELLED: { label: "ملغي", tone: "neutral" },
 };
 
+export const STORE_TYPE: Record<string, { label: string; plural: string }> = {
+  BRAND: { label: "براند", plural: "براندات" },
+  SHOWROOM: { label: "معرض", plural: "معارض" },
+  WAREHOUSE: { label: "مخزن", plural: "مخازن" },
+  SHOP: { label: "محل", plural: "محلات" },
+};
+
 export const BRAND_STATUS: Record<string, { label: string; tone: Tone }> = {
   PENDING_REVIEW: { label: "قيد المراجعة", tone: "warning" },
   ACTIVE: { label: "مفعّل", tone: "success" },

@@ -108,7 +108,7 @@ function buildColumns(actions: RowActions) {
   return helper.columns([
     helper.accessor((p) => p.brandId?.name ?? "براند محذوف", {
       id: "brand",
-      header: "البراند",
+      header: "المتجر",
       cell: (info) => (
         <Link
           href={`/payments/${info.row.original._id}`}

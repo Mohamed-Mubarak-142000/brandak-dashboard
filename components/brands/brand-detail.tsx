@@ -11,7 +11,7 @@ import { GOVERNORATE_NAMES } from "@/lib/governorates";
 import { BILLING_LABEL, formatDate, formatDateTime, formatMoney, formatPhone } from "@/lib/format";
 import { DetailList, DetailRow, Muted, Panel } from "@/components/data/detail-list";
 import { PageHeader, PageShell } from "@/components/data/page-header";
-import { Badge, BRAND_STATUS, PAYMENT_STATUS, SUBSCRIPTION_STATUS } from "@/components/ui/badge";
+import { Badge, BRAND_STATUS, PAYMENT_STATUS, STORE_TYPE, SUBSCRIPTION_STATUS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import { ActivityList } from "@/components/audit/activity-list";
@@ -94,7 +94,10 @@ export function BrandDetail() {
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
           <Panel>
-            <DetailList title="بيانات البراند">
+            <DetailList title="بيانات المتجر">
+              <DetailRow label="نوع المتجر">
+                <Badge>{STORE_TYPE[b.storeType ?? "BRAND"]?.label}</Badge>
+              </DetailRow>
               <DetailRow label="الرابط">
                 <span className="num text-ui">{b.slug}</span>
               </DetailRow>

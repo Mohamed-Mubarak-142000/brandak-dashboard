@@ -39,7 +39,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     group: "يحتاج قرارك",
     items: [
       { href: "/payments", label: "المدفوعات", icon: ReceiptText, count: "payments", ready: true },
-      { href: "/brands", label: "البراندات", icon: Store, count: "brands", ready: true },
+      { href: "/brands", label: "المتاجر", icon: Store, count: "brands", ready: true },
       { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: true },
     ],
   },
@@ -60,7 +60,7 @@ function Wordmark() {
   return (
     <span className="flex items-center gap-2.5">
       <Image src="/brand/brandak-mark.png" alt="" width={26} height={33} priority className="h-8 w-auto" />
-      <span className="font-display text-section leading-none text-ink">براندك</span>
+      <span className="font-display text-section leading-none text-ink">دكاكين</span>
       <span className="rounded-sm border border-line px-1.5 py-0.5 text-meta text-ink-3">الإدارة</span>
     </span>
   );

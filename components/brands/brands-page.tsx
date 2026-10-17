@@ -16,18 +16,22 @@ import { FilterChips, FilterDialog, type FilterSection } from "@/components/data
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu } from "@/components/data/row-menu";
 import { SearchInput } from "@/components/data/search-input";
-import { Badge, BRAND_STATUS } from "@/components/ui/badge";
+import { Badge, BRAND_STATUS, STORE_TYPE } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ACTION_LABEL, BRAND_ACTIONS, useBrandActions, type BrandActionKind } from "./brand-actions";
 
 const PAGE_SIZE = 20;
 const helper = createColumnHelper<TableFeatures, AdminBrand>();
 const STATUS_OPTIONS = [
-  { value: "ALL", label: "الكل", hint: "كل البراندات" },
+  { value: "ALL", label: "الكل", hint: "كل المتاجر" },
   { value: "PENDING_REVIEW", label: "قيد المراجعة", hint: "طلبات جديدة تنتظر قرارك" },
   { value: "ACTIVE", label: "مفعّلة", hint: "تمت الموافقة عليها" },
   { value: "SUSPENDED", label: "موقوفة", hint: "مخفية عن العملاء بقرار إداري" },
   { value: "REJECTED", label: "مرفوضة", hint: "يمكن لأصحابها التعديل وإعادة الإرسال" },
+];
+const TYPE_OPTIONS = [
+  { value: "ALL", label: "كل الأنواع" },
+  ...Object.entries(STORE_TYPE).map(([value, t]) => ({ value, label: t.plural })),
 ];
 
 const ownerOf = (b: AdminBrand) => (typeof b.ownerUserId === "object" ? b.ownerUserId : null);
@@ -53,14 +57,21 @@ export function BrandsPage() {
   const router = useRouter();
   const url = useUrlState();
   const status = url.get("status") ?? "ALL";
+  const storeType = url.get("storeType") ?? "ALL";
   const q = url.get("q") ?? "";
   const actions = useBrandActions();
   const runAction = actions.run;
 
   const list = useQuery({
-    queryKey: ["brands", status, q, url.page],
+    queryKey: ["brands", status, storeType, q, url.page],
     queryFn: () =>
-      api.page<AdminBrand>("/admin/brands", { status: status === "ALL" ? undefined : status, q, page: url.page, limit: PAGE_SIZE }),
+      api.page<AdminBrand>("/admin/brands", {
+        status: status === "ALL" ? undefined : status,
+        storeType: storeType === "ALL" ? undefined : storeType,
+        q,
+        page: url.page,
+        limit: PAGE_SIZE,
+      }),
     placeholderData: keepPreviousData,
   });
 
@@ -77,13 +88,16 @@ export function BrandsPage() {
       ) as Record<string, number>,
   });
 
-  const sections: FilterSection[] = [{ key: "status", label: "الحالة", options: STATUS_OPTIONS, defaultValue: "ALL", counts: counts.data }];
+  const sections: FilterSection[] = [
+    { key: "status", label: "الحالة", options: STATUS_OPTIONS, defaultValue: "ALL", counts: counts.data },
+    { key: "storeType", label: "نوع المتجر", options: TYPE_OPTIONS, defaultValue: "ALL", columns: 2 },
+  ];
 
   const columns = useMemo(
     () =>
       helper.columns([
         helper.accessor("name", {
-          header: "البراند",
+          header: "المتجر",
           cell: (info) => (
             <span className="flex items-center gap-3">
               <BrandLogo brand={info.row.original} />
@@ -108,6 +122,11 @@ export function BrandsPage() {
               </span>
             );
           },
+        }),
+        helper.accessor((b) => b.storeType ?? "BRAND", {
+          id: "storeType",
+          header: "النوع",
+          cell: (info) => <Badge>{STORE_TYPE[info.getValue()]?.label ?? info.getValue()}</Badge>,
         }),
         helper.accessor("status", {
           header: "الحالة",
@@ -139,7 +158,7 @@ export function BrandsPage() {
 
   return (
     <PageShell>
-      <PageHeader title="البراندات" description="راجع طلبات البراندات الجديدة وتابع حالة كل متجر." />
+      <PageHeader title="المتاجر" description="راجع طلبات المتاجر الجديدة (براندات ومعارض ومخازن ومحلات) وتابع حالة كل متجر." />
       <div className="mt-6 flex items-center gap-2">
         <SearchInput value={q} onChange={(v) => url.set({ q: v })} placeholder="ابحث باسم البراند" label="بحث باسم البراند" />
         <FilterDialog title="تصفية البراندات" sections={sections} values={{ status }} onApply={(v) => url.set({ status: v.status === "ALL" ? null : v.status })} />
@@ -159,14 +178,14 @@ export function BrandsPage() {
           empty={
             q
               ? { title: "لا توجد نتائج", description: "جرّب اسمًا آخر أو امسح البحث." }
-              : { title: "لا توجد براندات هنا", description: "عندما يقدّم صاحب براند طلبًا جديدًا سيظهر في هذه القائمة." }
+              : { title: "لا توجد متاجر هنا", description: "عندما يقدّم صاحب متجر طلبًا جديدًا سيظهر في هذه القائمة." }
           }
           paging={{ page: url.page, pageSize: PAGE_SIZE, total, onPage: (p) => url.set({ page: p }, { resetPage: false }) }}
           mobileItem={(b) => (
             <MobileRow
               href={`/brands/${b._id}`}
               title={b.name}
-              meta={ownerOf(b)?.name}
+              meta={[STORE_TYPE[b.storeType ?? "BRAND"]?.label, ownerOf(b)?.name].filter(Boolean).join(" · ")}
               badge={<Badge tone={BRAND_STATUS[b.status].tone}>{BRAND_STATUS[b.status].label}</Badge>}
               actions={<BrandMenu brand={b} onAction={(kind) => runAction(kind, b)} onOpen={() => router.push(`/brands/${b._id}`)} />}
             />

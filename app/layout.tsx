@@ -19,8 +19,8 @@ const kufi = Reem_Kufi({
 });
 
 export const metadata: Metadata = {
-  title: { default: "براندك · لوحة الإدارة", template: "%s · براندك" },
-  description: "لوحة إدارة منصة براندك",
+  title: { default: "دكاكين · لوحة الإدارة", template: "%s · دكاكين" },
+  description: "لوحة إدارة منصة دكاكين",
   robots: { index: false, follow: false },
 };
 

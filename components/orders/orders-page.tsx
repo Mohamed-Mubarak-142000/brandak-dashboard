@@ -137,7 +137,7 @@ export function OrdersPage() {
             </Link>
           ),
         }),
-        helper.accessor((o) => o.brand.name, { id: "brand", header: "البراند" }),
+        helper.accessor((o) => o.brand.name, { id: "brand", header: "المتجر" }),
         helper.accessor((o) => o.customer?.name ?? "—", {
           id: "customer",
           header: "العميل",

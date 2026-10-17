@@ -6,6 +6,8 @@
 
 export type PaymentStatus = "AWAITING_PROOF" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
 export type BrandStatus = "PENDING_REVIEW" | "ACTIVE" | "REJECTED" | "SUSPENDED";
+/** Kind of business behind a store. Missing on stores created before the field existed (= BRAND). */
+export type StoreType = "BRAND" | "SHOWROOM" | "WAREHOUSE" | "SHOP";
 export type BillingPeriod = "MONTHLY" | "YEARLY";
 export type SubscriptionStatus = "PENDING_PAYMENT" | "ACTIVE" | "EXPIRED" | "CANCELLED";
 
@@ -83,6 +85,7 @@ export interface AdminBrand {
   _id: string;
   name: string;
   slug: string;
+  storeType?: StoreType;
   description: string;
   status: BrandStatus;
   statusReason?: string;

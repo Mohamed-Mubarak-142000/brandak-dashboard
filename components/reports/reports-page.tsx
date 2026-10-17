@@ -42,7 +42,7 @@ const TYPE_OPTIONS = [
   { value: "ALL", label: "كل الأنواع" },
   { value: "REVIEW", label: "التقييمات" },
   { value: "PRODUCT", label: "المنتجات" },
-  { value: "BRAND", label: "البراندات" },
+  { value: "BRAND", label: "المتاجر" },
 ];
 
 type Ask =
