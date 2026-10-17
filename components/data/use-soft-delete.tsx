@@ -2,7 +2,7 @@
 
 import type { QueryKey } from "@tanstack/react-query";
 import { ArchiveRestore, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useAction } from "@/lib/api/use-action";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -48,8 +48,10 @@ export function useSoftDelete({
     },
   });
 
-  const askDelete = (target: Target) => setConfirming(target);
-  const restore = (target: Target) => act.mutate({ target, action: "restore" });
+  // Stable callbacks, so tables can keep memoised columns.
+  const { mutate } = act;
+  const askDelete = useCallback((target: Target) => setConfirming(target), []);
+  const restore = useCallback((target: Target) => mutate({ target, action: "restore" }), [mutate]);
 
   const menuItems = (target: Target, deleted: boolean, opts: { disabled?: boolean } = {}): RowMenuItem[] =>
     deleted

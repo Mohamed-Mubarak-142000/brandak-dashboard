@@ -7,7 +7,8 @@ import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 
-export type Filter = PaymentStatus | "ALL";
+/** DELETED is a view, not a status: soft-deleted payments of any status. */
+export type Filter = PaymentStatus | "ALL" | "DELETED";
 export type Sort = "oldest" | "newest";
 
 export const FILTERS: { value: Filter; label: string; hint: string }[] = [
@@ -17,6 +18,7 @@ export const FILTERS: { value: Filter; label: string; hint: string }[] = [
   { value: "APPROVED", label: "معتمدة", hint: "اشتراكات تم تفعيلها" },
   { value: "CANCELLED", label: "ملغاة", hint: "استُبدلت بطلب باقة أخرى قبل الدفع" },
   { value: "ALL", label: "الكل", hint: "كل المدفوعات بكل حالاتها" },
+  { value: "DELETED", label: "المحذوفة", hint: "المحذوف مؤقتًا ويمكن استرجاعه" },
 ];
 
 export const DEFAULT_STATUS: Filter = "PENDING_REVIEW";

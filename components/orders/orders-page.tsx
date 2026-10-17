@@ -13,6 +13,7 @@ import { formatDateTime, formatMoney, formatPhone, formatRelative } from "@/lib/
 import { useUrlState } from "@/lib/use-url-state";
 import { DataTable, MobileRow, type TableFeatures } from "@/components/data/data-table";
 import { FilterChips, FilterDialog, type FilterSection } from "@/components/data/filter-dialog";
+import { DELETED_FILTER, useSoftDelete } from "@/components/data/use-soft-delete";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu } from "@/components/data/row-menu";
 import { SearchInput } from "@/components/data/search-input";
@@ -79,6 +80,8 @@ export function OrdersPage() {
   const toast = useToast();
   const status = url.get("status") ?? "ALL";
   const range = url.get("range") ?? "ALL";
+  const deleted = url.get("deleted") ?? "no";
+  const showingDeleted = deleted === "yes";
   const q = url.get("q") ?? "";
   const cancel = useCancelOrder();
 
@@ -92,10 +95,11 @@ export function OrdersPage() {
   }, [range]);
 
   const list = useQuery({
-    queryKey: ["orders", status, range, q, url.page],
+    queryKey: ["orders", status, range, deleted, q, url.page],
     queryFn: () =>
       api.page<OrderSummary>("/admin/orders", {
         status: status === "ALL" ? undefined : status,
+        deleted: showingDeleted ? true : undefined,
         from,
         q,
         page: url.page,
@@ -107,8 +111,15 @@ export function OrdersPage() {
   const sections: FilterSection[] = [
     { key: "status", label: "الحالة", options: STATUS_OPTIONS, defaultValue: "ALL" },
     { key: "range", label: "الفترة", options: RANGE_OPTIONS, defaultValue: "ALL" },
+    DELETED_FILTER,
   ];
-  const values = { status, range };
+  const values = { status, range, deleted };
+  const del = useSoftDelete({
+    base: "/admin/orders",
+    noun: "الطلب",
+    invalidate: [["orders"], ["order"]],
+    warning: "هيختفي من طلبات العميل ولوحة المتجر والإحصائيات.",
+  });
 
   const copy = async (o: OrderSummary) => {
     await navigator.clipboard?.writeText(o.orderNumber).catch(() => undefined);
@@ -121,7 +132,9 @@ export function OrdersPage() {
       items={[
         { label: "عرض التفاصيل", icon: Eye, onSelect: () => router.push(`/orders/${o.id}`) },
         { label: "نسخ رقم الطلب", icon: Copy, onSelect: () => copy(o) },
-        { label: "إلغاء الطلب", icon: XCircle, danger: true, separated: true, hidden: !adminCanCancel(o.status), onSelect: () => cancel.ask(o) },
+        { label: "إلغاء الطلب", icon: XCircle, danger: true, separated: true, hidden: showingDeleted || !adminCanCancel(o.status), onSelect: () => cancel.ask(o) },
+        // Only finished orders can be deleted (the API refuses the rest).
+        ...(showingDeleted || o.status === "DELIVERED" || o.status === "CANCELLED" ? del.menuItems({ id: o.id, name: o.orderNumber }, showingDeleted) : []),
       ]}
     />
   );
@@ -183,22 +196,22 @@ export function OrdersPage() {
         }),
       ]),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [router],
+    [router, showingDeleted],
   );
 
   return (
     <PageShell>
-      <PageHeader title="الطلبات" description="كل الطلبات بين العملاء والبراندات. التنفيذ مسؤولية البراند، وتتدخل الإدارة عند الشكاوى." />
+      <PageHeader title="الطلبات" description="كل الطلبات بين العملاء والمتاجر. التنفيذ مسؤولية المتجر، والإدارة بتتدخل عند الشكاوى." />
       <div className="mt-6 flex items-center gap-2">
         <SearchInput value={q} onChange={(v) => url.set({ q: v })} placeholder="رقم الطلب أو هاتف العميل" label="بحث برقم الطلب أو هاتف العميل" />
         <FilterDialog
           title="تصفية الطلبات"
           sections={sections}
           values={values}
-          onApply={(v) => url.set({ status: v.status === "ALL" ? null : v.status, range: v.range === "ALL" ? null : v.range })}
+          onApply={(v) => url.set({ status: v.status === "ALL" ? null : v.status, range: v.range === "ALL" ? null : v.range, deleted: v.deleted === "yes" ? "yes" : null })}
         />
       </div>
-      <FilterChips sections={sections} values={values} onClear={(key) => url.set(key === "all" ? { status: null, range: null } : { [key]: null })} />
+      <FilterChips sections={sections} values={values} onClear={(key) => url.set(key === "all" ? { status: null, range: null, deleted: null } : { [key]: null })} />
       <div className="mt-4">
         <DataTable
           label="جدول الطلبات"
@@ -229,6 +242,7 @@ export function OrdersPage() {
         />
       </div>
       {cancel.dialog}
+      {del.dialog}
     </PageShell>
   );
 }

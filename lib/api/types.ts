@@ -51,6 +51,8 @@ export interface ProofAttempt {
 /** GET /admin/payments (list): brandId populated. */
 export interface PaymentListItem {
   _id: string;
+  /** Set when soft-deleted by an admin. */
+  deletedAt?: string | null;
   brandId: BrandRef;
   subscriptionId: string;
   amount: number;

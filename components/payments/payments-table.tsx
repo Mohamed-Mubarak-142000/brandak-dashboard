@@ -4,6 +4,7 @@ import * as Menu from "@radix-ui/react-dropdown-menu";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createColumnHelper, tableFeatures, useTable } from "@tanstack/react-table";
 import {
+  ArchiveRestore,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -13,6 +14,7 @@ import {
   MoreHorizontal,
   Search,
   ShieldCheck,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
@@ -29,6 +31,7 @@ import { EmptyState, ErrorState, Skeleton } from "@/components/ui/states";
 import { useToast } from "@/components/ui/toast";
 import { ActiveFilterChips, DEFAULT_STATUS, defaultSort, FILTERS, PaymentFilters, type Filter, type Sort } from "./payment-filters";
 import { RejectDialog } from "./reject-dialog";
+import { useSoftDelete } from "@/components/data/use-soft-delete";
 
 const PAGE_SIZE = 20;
 
@@ -38,7 +41,8 @@ const EMPTY: Record<Filter, { title: string; description: string }> = {
   REJECTED: { title: "لا توجد إيصالات مرفوضة", description: "الإيصالات المرفوضة تبقى هنا حتى يرفع صاحبها إيصالًا جديدًا." },
   APPROVED: { title: "لم تُعتمد أي دفعة بعد", description: "كل دفعة تعتمدها تظهر هنا مع تاريخ الاعتماد." },
   CANCELLED: { title: "لا توجد طلبات ملغاة", description: "يُلغى الطلب تلقائيًا عندما يختار صاحب البراند باقة أخرى قبل الدفع." },
-  ALL: { title: "لا توجد مدفوعات بعد", description: "عندما يطلب صاحب براند اشتراكًا سيظهر طلبه هنا." },
+  ALL: { title: "لا توجد مدفوعات بعد", description: "عندما يطلب صاحب متجر اشتراكًا سيظهر طلبه هنا." },
+  DELETED: { title: "مفيش مدفوعات محذوفة", description: "المدفوعات اللي بتحذفها بتظهر هنا وتقدر تسترجعها." },
 };
 
 // Module scope: stable inputs for the table (see TanStack Table v9 guidance).
@@ -51,7 +55,12 @@ interface RowActions {
   reject: (p: PaymentListItem) => void;
   openReceipt: (p: PaymentListItem) => void;
   copyReference: (p: PaymentListItem) => void;
+  askDelete: (p: PaymentListItem) => void;
+  restore: (p: PaymentListItem) => void;
 }
+
+/** Only decided payments can be deleted; pending ones still drive a subscription. */
+const DECIDED = new Set(["APPROVED", "REJECTED", "CANCELLED"]);
 
 function ActionsMenu({ payment, actions }: { payment: PaymentListItem; actions: RowActions }) {
   const pending = payment.status === "PENDING_REVIEW";
@@ -86,6 +95,23 @@ function ActionsMenu({ payment, actions }: { payment: PaymentListItem; actions: 
             <Copy aria-hidden className="size-4" />
             نسخ الرقم المرجعي
           </Menu.Item>
+          {payment.deletedAt ? (
+            <>
+              <Menu.Separator className="my-1 h-px bg-line" />
+              <Menu.Item className={item} onSelect={() => actions.restore(payment)}>
+                <ArchiveRestore aria-hidden className="size-4" />
+                استرجاع الدفعة
+              </Menu.Item>
+            </>
+          ) : DECIDED.has(payment.status) ? (
+            <>
+              <Menu.Separator className="my-1 h-px bg-line" />
+              <Menu.Item className={cn(item, "text-danger data-[highlighted]:bg-danger-soft")} onSelect={() => actions.askDelete(payment)}>
+                <Trash2 aria-hidden className="size-4" />
+                حذف الدفعة
+              </Menu.Item>
+            </>
+          ) : null}
           {pending && (
             <>
               <Menu.Separator className="my-1 h-px bg-line" />
@@ -214,7 +240,8 @@ export function PaymentsTable() {
     queryKey: qk.paymentsPage(status, page, sort),
     queryFn: () =>
       api.page<PaymentListItem>("/admin/payments", {
-        status: status === "ALL" ? undefined : status,
+        status: status === "ALL" || status === "DELETED" ? undefined : status,
+        deleted: status === "DELETED" ? true : undefined,
         sort,
         page,
         limit: PAGE_SIZE,
@@ -228,7 +255,11 @@ export function PaymentsTable() {
     queryFn: async () => {
       const entries = await Promise.all(
         FILTERS.map(async (f) => {
-          const res = await api.page("/admin/payments", { status: f.value === "ALL" ? undefined : f.value, limit: 1 });
+          const res = await api.page("/admin/payments", {
+            status: f.value === "ALL" || f.value === "DELETED" ? undefined : f.value,
+            deleted: f.value === "DELETED" ? true : undefined,
+            limit: 1,
+          });
           return [f.value, res.meta.total] as const;
         }),
       );
@@ -265,9 +296,19 @@ export function PaymentsTable() {
       }),
   });
 
+  const del = useSoftDelete({
+    base: "/admin/payments",
+    noun: "الدفعة",
+    invalidate: [["payments"]],
+    warning: "هتختفي من المدفوعات والإحصائيات. الرقم المرجعي بيفضل محجوز ومش هيتقبل تاني.",
+  });
+  const { askDelete, restore } = del;
+
   const actions = useMemo<RowActions>(
     () => ({
       open: (p) => router.push(`/payments/${p._id}`),
+      askDelete: (p) => askDelete({ id: p._id, name: `${p.brandId?.name ?? "دفعة"} — ${formatMoney(p.amount)}` }),
+      restore: (p) => restore({ id: p._id, name: p.brandId?.name ?? "دفعة" }),
       reject: (p) => setRejecting(p),
       copyReference: async (p) => {
         if (!p.transactionReference) return;
@@ -287,7 +328,7 @@ export function PaymentsTable() {
         }
       },
     }),
-    [router, toast, setRejecting],
+    [router, toast, setRejecting, askDelete, restore],
   );
 
   const columns = useMemo(() => buildColumns(actions), [actions]);
@@ -303,17 +344,18 @@ export function PaymentsTable() {
       <header className="flex flex-col gap-1">
         <h1 className="font-display text-page text-ink">المدفوعات</h1>
         <p className="text-ui text-ink-2">طابق كل إيصال مع حساب InstaPay قبل تفعيل الاشتراك.</p>
+        {del.dialog}
       </header>
 
       <div className="mt-6 flex items-center gap-2">
         <label className="relative min-w-0 flex-1 sm:max-w-sm">
-          <span className="sr-only">بحث باسم البراند أو الرقم المرجعي</span>
+          <span className="sr-only">بحث باسم المتجر أو الرقم المرجعي</span>
           <Search aria-hidden className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink-3" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="ابحث باسم البراند أو الرقم المرجعي"
+            placeholder="ابحث باسم المتجر أو الرقم المرجعي"
             className="h-11 w-full rounded-sm border border-line-strong bg-surface ps-9 pe-3 text-ui text-ink placeholder:text-ink-3 hover:border-ink-3 focus:border-accent focus:outline-none"
           />
         </label>
