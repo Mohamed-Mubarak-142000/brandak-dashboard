@@ -21,13 +21,23 @@ export interface BrandRef {
   subscriptionEndsAt?: string | null;
 }
 
+export interface PlanLimits {
+  /** Integer >= 1. */
+  maxActiveProducts: number;
+  /** Integer >= 1, or null = unlimited. */
+  maxOrdersPerMonth: number | null;
+  /** Integer 1..10. */
+  maxImagesPerProduct: number;
+}
+
 export interface PlanSnapshot {
   code: string;
   nameAr: string;
   nameEn: string;
   price: number;
   durationDays: number;
-  limits: { maxActiveProducts: number };
+  /** Snapshots taken before the orders/images limits existed only carry maxActiveProducts. */
+  limits: Pick<PlanLimits, "maxActiveProducts"> & Partial<Omit<PlanLimits, "maxActiveProducts">>;
 }
 
 export interface SubscriptionRef {
@@ -255,7 +265,8 @@ export interface Plan {
   descriptionAr: string;
   priceMonthly: number;
   priceYearly: number;
-  limits: { maxActiveProducts: number };
+  /** 0 monthly and yearly = free plan, activates without payment. */
+  limits: PlanLimits;
   features: string[];
   isActive: boolean;
   sortOrder: number;

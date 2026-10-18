@@ -27,6 +27,16 @@ const NO_CATS: Category[] = [];
 
 const ActiveBadge = ({ active }: { active: boolean }) => (active ? <Badge tone="success">مفعّل</Badge> : <Badge>مخفي</Badge>);
 
+/** Both prices 0 = free plan that activates without payment. */
+const isFreePlan = (p: Plan) => p.priceMonthly === 0 && p.priceYearly === 0;
+const FreeBadge = () => <Badge tone="accent">مجانية</Badge>;
+
+/** "30 منتج · 500 طلب/شهر · 6 صور" */
+function planLimitsText({ limits }: Plan) {
+  const orders = limits.maxOrdersPerMonth == null ? "طلبات بلا حد" : `${formatNumber(limits.maxOrdersPerMonth)} طلب/شهر`;
+  return [`${formatNumber(limits.maxActiveProducts)} منتج`, orders, `${formatNumber(limits.maxImagesPerProduct)} ${limits.maxImagesPerProduct === 1 ? "صورة" : "صور"}`].join(" · ");
+}
+
 /** "الحالية / المحذوفة" switch for the unpaginated settings tables. */
 function DeletedToggle({ value, onChange, deletedCount }: { value: boolean; onChange: (v: boolean) => void; deletedCount: number }) {
   return (
@@ -96,9 +106,12 @@ function PlansTab() {
             </span>
           ),
         }),
-        planHelper.accessor("priceMonthly", { header: "شهريًا", cell: (i) => <span className="num font-semibold">{formatMoney(i.getValue())}</span> }),
-        planHelper.accessor("priceYearly", { header: "سنويًا", cell: (i) => <span className="num">{formatMoney(i.getValue())}</span> }),
-        planHelper.accessor((p) => p.limits.maxActiveProducts, { id: "limit", header: "حد المنتجات", cell: (i) => <span className="num">{formatNumber(i.getValue())}</span> }),
+        planHelper.accessor("priceMonthly", {
+          header: "شهريًا",
+          cell: (i) => (isFreePlan(i.row.original) ? <FreeBadge /> : <span className="num font-semibold">{formatMoney(i.getValue())}</span>),
+        }),
+        planHelper.accessor("priceYearly", { header: "سنويًا", cell: (i) => (isFreePlan(i.row.original) ? <span className="text-ink-3">—</span> : <span className="num">{formatMoney(i.getValue())}</span>) }),
+        planHelper.accessor((p) => p.limits.maxActiveProducts, { id: "limit", header: "الحدود", cell: (i) => <span className="num whitespace-nowrap">{planLimitsText(i.row.original)}</span> }),
         planHelper.accessor("isActive", { header: "الحالة", cell: (i) => <ActiveBadge active={i.getValue()} /> }),
         planHelper.display({ id: "actions", header: () => <span className="sr-only">إجراءات</span>, cell: (i) => <div className="flex justify-end">{menu(i.row.original)}</div> }),
       ]),
@@ -128,7 +141,7 @@ function PlansTab() {
         error={plans.error}
         onRetry={() => plans.refetch()}
         empty={showDeleted ? { title: "مفيش باقات محذوفة" } : { title: "لا توجد باقات", description: "أضف أول باقة ليستطيع أصحاب المتاجر الاشتراك." }}
-        mobileItem={(p) => <MobileRow title={p.nameAr} trailing={<span className="num">{formatMoney(p.priceMonthly)}</span>} meta={`حتى ${p.limits.maxActiveProducts} منتج`} badge={<ActiveBadge active={p.isActive} />} actions={menu(p)} />}
+        mobileItem={(p) => <MobileRow title={p.nameAr} trailing={isFreePlan(p) ? <FreeBadge /> : <span className="num">{formatMoney(p.priceMonthly)}</span>} meta={planLimitsText(p)} badge={<ActiveBadge active={p.isActive} />} actions={menu(p)} />}
       />
       <PlanFormDialog plan={editing} open={formOpen} onOpenChange={setFormOpen} />
       {del.dialog}

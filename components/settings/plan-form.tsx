@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { api } from "@/lib/api/client";
 import { useAction } from "@/lib/api/use-action";
 import type { Plan } from "@/lib/api/types";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Field, Input, Textarea } from "@/components/ui/field";
 
 const money = z.coerce.number({ message: "أدخل رقمًا" }).min(0, "لا يمكن أن يكون سالبًا");
@@ -19,7 +20,18 @@ const schema = z.object({
   priceMonthly: money,
   priceYearly: money,
   maxActiveProducts: z.coerce.number({ message: "أدخل رقمًا" }).int("رقم صحيح فقط").min(1, "منتج واحد على الأقل"),
+  // Only validated when "بدون حد" is off (see superRefine); unlimited sends null.
+  ordersUnlimited: z.boolean(),
+  maxOrdersPerMonth: z.union([z.string(), z.number()]).optional(),
+  maxImagesPerProduct: z.coerce.number({ message: "أدخل رقمًا" }).int("رقم صحيح فقط").min(1, "صورة واحدة على الأقل").max(10, "10 صور كحد أقصى"),
   features: z.string().optional(),
+}).superRefine((v, ctx) => {
+  if (v.ordersUnlimited) return;
+  const raw = v.maxOrdersPerMonth;
+  const n = Number(raw);
+  if (raw === undefined || raw === "" || Number.isNaN(n)) ctx.addIssue({ code: "custom", path: ["maxOrdersPerMonth"], message: "أدخل رقمًا أو اختر بدون حد" });
+  else if (!Number.isInteger(n)) ctx.addIssue({ code: "custom", path: ["maxOrdersPerMonth"], message: "رقم صحيح فقط" });
+  else if (n < 1) ctx.addIssue({ code: "custom", path: ["maxOrdersPerMonth"], message: "طلب واحد على الأقل" });
 });
 type Values = z.input<typeof schema>;
 
@@ -30,6 +42,8 @@ export function PlanFormDialog({ plan, open, onOpenChange }: { plan: Plan | null
     handleSubmit,
     formState: { errors },
     reset,
+    control,
+    setValue,
   } = useForm<Values>({
     resolver: zodResolver(schema),
     values: plan
@@ -41,10 +55,26 @@ export function PlanFormDialog({ plan, open, onOpenChange }: { plan: Plan | null
           priceMonthly: plan.priceMonthly,
           priceYearly: plan.priceYearly,
           maxActiveProducts: plan.limits.maxActiveProducts,
+          ordersUnlimited: plan.limits.maxOrdersPerMonth == null,
+          maxOrdersPerMonth: plan.limits.maxOrdersPerMonth ?? "",
+          maxImagesPerProduct: plan.limits.maxImagesPerProduct,
           features: plan.features.join("\n"),
         }
-      : { nameAr: "", nameEn: "", code: "", descriptionAr: "", priceMonthly: 0, priceYearly: 0, maxActiveProducts: 30, features: "" },
+      : {
+          nameAr: "",
+          nameEn: "",
+          code: "",
+          descriptionAr: "",
+          priceMonthly: 0,
+          priceYearly: 0,
+          maxActiveProducts: 30,
+          ordersUnlimited: false,
+          maxOrdersPerMonth: 500,
+          maxImagesPerProduct: 6,
+          features: "",
+        },
   });
+  const ordersUnlimited = useWatch({ control, name: "ordersUnlimited" });
 
   const save = useAction({
     run: (v: z.output<typeof schema>) => {
@@ -54,7 +84,11 @@ export function PlanFormDialog({ plan, open, onOpenChange }: { plan: Plan | null
         descriptionAr: v.descriptionAr ?? "",
         priceMonthly: v.priceMonthly,
         priceYearly: v.priceYearly,
-        limits: { maxActiveProducts: v.maxActiveProducts },
+        limits: {
+          maxActiveProducts: v.maxActiveProducts,
+          maxOrdersPerMonth: v.ordersUnlimited ? null : Number(v.maxOrdersPerMonth),
+          maxImagesPerProduct: v.maxImagesPerProduct,
+        },
         features: (v.features ?? "").split("\n").map((f) => f.trim()).filter(Boolean),
       };
       return editing ? api.patch(`/admin/plans/${plan!._id}`, body) : api.post("/admin/plans", { ...body, code: v.code });
@@ -96,7 +130,34 @@ export function PlanFormDialog({ plan, open, onOpenChange }: { plan: Plan | null
         <Field label="حد المنتجات المنشورة" error={errors.maxActiveProducts?.message}>
           {(a) => <Input {...a} {...register("maxActiveProducts")} type="number" inputMode="numeric" dir="ltr" className="text-start" />}
         </Field>
-        <Field label="السعر الشهري (ج.م)" error={errors.priceMonthly?.message}>
+        <Field label="أقصى عدد صور للمنتج" hint="من 1 إلى 10 صور" error={errors.maxImagesPerProduct?.message}>
+          {(a) => <Input {...a} {...register("maxImagesPerProduct")} type="number" inputMode="numeric" min={1} max={10} dir="ltr" className="text-start" />}
+        </Field>
+        <div className="flex flex-col gap-1">
+          <Field
+            label="أقصى عدد طلبات في الشهر"
+            hint={ordersUnlimited ? "الطلبات بلا حد لهذه الباقة" : undefined}
+            error={ordersUnlimited ? undefined : errors.maxOrdersPerMonth?.message}
+          >
+            {(a) => (
+              <Input
+                {...a}
+                {...register("maxOrdersPerMonth")}
+                type="number"
+                inputMode="numeric"
+                min={1}
+                dir="ltr"
+                disabled={ordersUnlimited}
+                placeholder={ordersUnlimited ? "بدون حد" : undefined}
+                className="text-start"
+              />
+            )}
+          </Field>
+          <Checkbox checked={!!ordersUnlimited} onCheckedChange={(c) => setValue("ordersUnlimited", c, { shouldValidate: true })}>
+            بدون حد
+          </Checkbox>
+        </div>
+        <Field label="السعر الشهري (ج.م)" hint="0 = باقة مجانية تتفعل من غير دفع" error={errors.priceMonthly?.message}>
           {(a) => <Input {...a} {...register("priceMonthly")} type="number" inputMode="decimal" dir="ltr" className="text-start" />}
         </Field>
         <Field label="السعر السنوي (ج.م)" hint="عادة 10 أضعاف الشهري (شهران مجانًا)" error={errors.priceYearly?.message}>

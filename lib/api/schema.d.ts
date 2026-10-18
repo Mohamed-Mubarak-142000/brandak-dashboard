@@ -1512,6 +1512,10 @@ export interface components {
         };
         PlanLimitsDto: {
             maxActiveProducts: number;
+            /** @description Integer >= 1, or null = unlimited. */
+            maxOrdersPerMonth: number | null;
+            /** @description Integer 1..10. */
+            maxImagesPerProduct: number;
         };
         CreatePlanDto: {
             code: string;
