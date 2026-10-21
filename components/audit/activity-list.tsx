@@ -66,6 +66,10 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   AD_APPROVED: "وافق على إعلان",
   AD_REJECTED: "رفض إعلان",
   AD_PRICES_UPDATED: "عدّل أسعار الإعلانات",
+  RESELLER_PAYOUT_PAID: "أكّد تحويل أرباح مسوّق",
+  RESELLER_PAYOUT_REJECTED: "رفض طلب سحب أرباح مسوّق",
+  RESELLER_SUSPENDED: "أوقف مسوّق",
+  RESELLER_ACTIVE: "فعّل مسوّق",
 };
 
 export const ENTITY_LABEL: Record<string, string> = {
@@ -85,11 +89,14 @@ export const ENTITY_LABEL: Record<string, string> = {
   SupportTicket: "تذكرة دعم",
   ReturnRequest: "مرتجع",
   Ad: "إعلان",
+  ResellerPayout: "سحب أرباح مسوّق",
+  Reseller: "مسوّق",
 };
 
 export function actorName(entry: AuditEntry) {
   if (entry.actorType === "SYSTEM") return "النظام";
-  if (entry.actorId && typeof entry.actorId === "object") return entry.actorId.name;
+  if (entry.actorId && typeof entry.actorId === "object")
+    return entry.actorId.name;
   return entry.actorType === "ADMIN" ? "مشرف" : "مستخدم";
 }
 
@@ -106,19 +113,39 @@ export function auditNote(entry: AuditEntry): string | null {
 }
 
 /** Compact timeline of audit entries (used on detail pages). */
-export function ActivityList({ query, empty }: { query: UseQueryResult<Page<AuditEntry>>; empty: string }) {
+export function ActivityList({
+  query,
+  empty,
+}: {
+  query: UseQueryResult<Page<AuditEntry>>;
+  empty: string;
+}) {
   if (query.isPending) return <Skeleton className="h-24 w-full" />;
-  if (query.isError) return <ErrorState error={query.error} onRetry={() => query.refetch()} className="py-6" />;
-  if (!query.data.items.length) return <p className="text-ui text-ink-3">{empty}</p>;
+  if (query.isError)
+    return (
+      <ErrorState
+        error={query.error}
+        onRetry={() => query.refetch()}
+        className="py-6"
+      />
+    );
+  if (!query.data.items.length)
+    return <p className="text-ui text-ink-3">{empty}</p>;
   return (
     <ol className="relative flex flex-col gap-4 border-s border-line ps-4">
       {query.data.items.map((e) => (
         <li key={e._id} className="relative">
-          <span aria-hidden className="absolute -start-[21px] top-1.5 size-2.5 rounded-full border-2 border-surface bg-brand" />
+          <span
+            aria-hidden
+            className="absolute -start-[21px] top-1.5 size-2.5 rounded-full border-2 border-surface bg-brand"
+          />
           <p className="text-ui text-ink">
-            <span className="font-semibold">{actorName(e)}</span> {AUDIT_ACTIONS[e.action] ?? e.action}
+            <span className="font-semibold">{actorName(e)}</span>{" "}
+            {AUDIT_ACTIONS[e.action] ?? e.action}
           </p>
-          {auditNote(e) && <p className="mt-0.5 text-ui text-ink-2">{auditNote(e)}</p>}
+          {auditNote(e) && (
+            <p className="mt-0.5 text-ui text-ink-2">{auditNote(e)}</p>
+          )}
           <time dateTime={e.createdAt} className="text-meta text-ink-3">
             {formatDateTime(e.createdAt)}
           </time>

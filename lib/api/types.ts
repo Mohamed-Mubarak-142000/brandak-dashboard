@@ -4,12 +4,15 @@
  * service objects that Swagger doesn't model.
  */
 
-export type PaymentStatus = "AWAITING_PROOF" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
-export type BrandStatus = "PENDING_REVIEW" | "ACTIVE" | "REJECTED" | "SUSPENDED";
+export type PaymentStatus =
+  "AWAITING_PROOF" | "PENDING_REVIEW" | "APPROVED" | "REJECTED" | "CANCELLED";
+export type BrandStatus =
+  "PENDING_REVIEW" | "ACTIVE" | "REJECTED" | "SUSPENDED";
 /** Kind of business behind a store. Missing on stores created before the field existed (= BRAND). */
 export type StoreType = "BRAND" | "SHOWROOM" | "WAREHOUSE" | "SHOP";
 export type BillingPeriod = "MONTHLY" | "YEARLY";
-export type SubscriptionStatus = "PENDING_PAYMENT" | "ACTIVE" | "EXPIRED" | "CANCELLED";
+export type SubscriptionStatus =
+  "PENDING_PAYMENT" | "ACTIVE" | "EXPIRED" | "CANCELLED";
 
 export interface BrandRef {
   _id: string;
@@ -37,7 +40,8 @@ export interface PlanSnapshot {
   price: number;
   durationDays: number;
   /** Snapshots taken before the orders/images limits existed only carry maxActiveProducts. */
-  limits: Pick<PlanLimits, "maxActiveProducts"> & Partial<Omit<PlanLimits, "maxActiveProducts">>;
+  limits: Pick<PlanLimits, "maxActiveProducts"> &
+    Partial<Omit<PlanLimits, "maxActiveProducts">>;
 }
 
 export interface SubscriptionRef {
@@ -105,10 +109,25 @@ export interface AdminBrand {
   statusReason?: string;
   logo?: { url: string };
   cover?: { url: string };
-  ownerUserId: { _id: string; name: string; email: string; phone: string; status?: string } | string;
-  categoryIds: ({ _id: string; nameAr: string; nameEn: string; slug: string } | string)[];
+  ownerUserId:
+    | {
+        _id: string;
+        name: string;
+        email: string;
+        phone: string;
+        status?: string;
+      }
+    | string;
+  categoryIds: (
+    { _id: string; nameAr: string; nameEn: string; slug: string } | string
+  )[];
   contact: { phone?: string; email?: string; whatsapp?: string };
-  socialLinks: { instagram?: string; facebook?: string; tiktok?: string; website?: string };
+  socialLinks: {
+    instagram?: string;
+    facebook?: string;
+    tiktok?: string;
+    website?: string;
+  };
   settings: {
     shippingZones: ShippingZone[];
     defaultShippingFee: number | null;
@@ -118,6 +137,17 @@ export interface AdminBrand {
     shippingPolicy: string;
     returnPolicy: string;
     acceptsOrders: boolean;
+    /** Days a buyer has to ask for a return; missing on older stores (the API uses 14). */
+    returnDays?: number;
+    pickup?: {
+      enabled: boolean;
+      address: string;
+      governorate: string | null;
+      hours: string;
+      mapUrl: string;
+    };
+    /** Resellers may sell the store's products at their own price. */
+    allowResellers?: boolean;
   };
   subscriptionEndsAt: string | null;
   ratingAvg: number;
@@ -187,7 +217,10 @@ export interface OrderDetail extends OrderSummary {
     size?: string;
     color?: string;
     sku?: string;
+    /** On a reseller's order: the reseller's selling price. */
     unitPrice: number;
+    /** On a reseller's order: the store's own price (the difference is the reseller's margin). */
+    storeUnitPrice?: number;
     quantity: number;
     lineTotal: number;
   }[];
@@ -206,14 +239,24 @@ export interface OrderDetail extends OrderSummary {
     location: { lat: number; lng: number } | null;
   } | null;
   fulfillment?: "DELIVERY" | "PICKUP";
-  pickup?: { address: string; governorate: string | null; hours: string; mapUrl: string } | null;
+  pickup?: {
+    address: string;
+    governorate: string | null;
+    hours: string;
+    mapUrl: string;
+  } | null;
   subtotal: number;
   shippingFee: number;
   discountTotal: number;
   notes: string;
   cancelReason: string | null;
   deliveredAt: string | null;
-  history: { status: OrderStatus; at: string; actor: "CUSTOMER" | "BRAND" | "ADMIN" | "SYSTEM"; note: string | null }[];
+  history: {
+    status: OrderStatus;
+    at: string;
+    actor: "CUSTOMER" | "BRAND" | "ADMIN" | "SYSTEM";
+    note: string | null;
+  }[];
   allowedNextStatuses: OrderStatus[];
   /** Set on delivered orders (admin view); null when no commission was charged. */
   commission?: OrderCommission | null;
@@ -221,6 +264,12 @@ export interface OrderDetail extends OrderSummary {
   coupon?: OrderCoupon | null;
   /** Set once the store ships the order; null/missing before that. */
   shipment?: OrderShipment | null;
+  /** A gift order: a card message, and the parcel goes without a priced invoice. */
+  gift?: { message: string; hidePrices: boolean } | null;
+  /** Fatrina points spent (discount is part of discountTotal, paid by Fatrina) and earned on delivery. */
+  points?: { used: number; discount: number; earned: number } | null;
+  /** Sold by a reseller: margin = their price − the store's price, added to the store's commission balance. */
+  resale?: { margin: number } | null;
 }
 
 /** BRAND = a store's own coupon; PLATFORM = a Fatrina coupon, credited back to the store on delivery. */
@@ -375,7 +424,8 @@ export interface BrandCommissionStatus extends PlatformSettings {
   pendingSettlement: { id: string; amount: number; createdAt: string } | null;
 }
 
-export type LedgerType = "COMMISSION" | "REVERSAL" | "PAYMENT" | "ADJUSTMENT";
+export type LedgerType =
+  "COMMISSION" | "REVERSAL" | "PAYMENT" | "ADJUSTMENT" | "RESELLER_MARGIN";
 
 export interface LedgerEntry {
   _id: string;
@@ -463,9 +513,16 @@ export interface ProductCard {
 
 // ---------- Support ----------
 
-export type TicketType = "NOT_RECEIVED" | "NOT_AS_DESCRIBED" | "ORDER_PROBLEM" | "PAYMENT" | "ACCOUNT" | "OTHER";
+export type TicketType =
+  | "NOT_RECEIVED"
+  | "NOT_AS_DESCRIBED"
+  | "ORDER_PROBLEM"
+  | "PAYMENT"
+  | "ACCOUNT"
+  | "OTHER";
 /** WAITING_STORE, OPEN and ESCALATED are the active ones; replies and decisions only work on those. */
-export type TicketStatus = "WAITING_STORE" | "OPEN" | "ESCALATED" | "RESOLVED" | "CLOSED";
+export type TicketStatus =
+  "WAITING_STORE" | "OPEN" | "ESCALATED" | "RESOLVED" | "CLOSED";
 export type TicketOutcome = "CUSTOMER" | "STORE" | "NEUTRAL";
 
 export interface TicketMessage {
@@ -506,12 +563,22 @@ export interface TicketDetail extends Ticket {
 }
 
 /** GET /admin/tickets/counts — active tickets only. */
-export type TicketCounts = Record<"WAITING_STORE" | "OPEN" | "ESCALATED", number>;
+export type TicketCounts = Record<
+  "WAITING_STORE" | "OPEN" | "ESCALATED",
+  number
+>;
 
 // ---------- Returns ----------
 
-export type ReturnReason = "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "WRONG_ITEM" | "CHANGED_MIND" | "OTHER";
-export type ReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "REFUNDED" | "CANCELLED";
+export type ReturnReason =
+  | "WRONG_SIZE"
+  | "DAMAGED"
+  | "NOT_AS_DESCRIBED"
+  | "WRONG_ITEM"
+  | "CHANGED_MIND"
+  | "OTHER";
+export type ReturnStatus =
+  "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "REFUNDED" | "CANCELLED";
 
 /** GET /admin/returns — a customer sending items back from a delivered order. */
 export interface ReturnRequest {
@@ -537,7 +604,12 @@ export interface ReturnRequest {
   /** EGP: the items' value minus their share of the order's discount. */
   refundAmount: number;
   status: ReturnStatus;
-  history: { status: ReturnStatus; at: string; actor: "CUSTOMER" | "BRAND" | "ADMIN"; note?: string | null }[];
+  history: {
+    status: ReturnStatus;
+    at: string;
+    actor: "CUSTOMER" | "BRAND" | "ADMIN";
+    note?: string | null;
+  }[];
   /** EGP of commission given back to the store once refunded (0 before that). */
   commissionReversed: number;
   createdAt: string;
@@ -583,11 +655,37 @@ export interface AdPrice {
   slots: number;
 }
 
+// ---------- Resellers ----------
+
+export type ResellerPayoutStatus = "REQUESTED" | "PAID" | "REJECTED";
+
+/** GET /admin/resellers/payouts — a reseller asking for their delivered margins by InstaPay. */
+export interface ResellerPayout {
+  _id: string;
+  id: string;
+  /** The reseller's user id. */
+  resellerId: string;
+  amount: number;
+  /** InstaPay address (or wallet number) to transfer to. */
+  payoutAddress: string;
+  payoutName: string;
+  status: ResellerPayoutStatus;
+  /** The InstaPay transaction reference, once paid. */
+  reference: string | null;
+  rejectReason: string | null;
+  createdAt: string;
+  reseller: { name: string; phone: string; email: string } | null;
+}
+
 // ---------- Analytics ----------
 
 export interface AdminOverview {
   range: { from: string; to: string };
-  brands: { byStatus: Record<BrandStatus, number>; visible: number; expiringIn7Days: number };
+  brands: {
+    byStatus: Record<BrandStatus, number>;
+    visible: number;
+    expiringIn7Days: number;
+  };
   users: { total: number; newInRange: number };
   subscriptions: {
     active: number;
@@ -597,7 +695,11 @@ export interface AdminOverview {
     approvedPaymentsInRange: number;
     renewalsInRange: number;
   };
-  queues: { pendingPayments: number; pendingBrandApplications: number; openReports: number };
+  queues: {
+    pendingPayments: number;
+    pendingBrandApplications: number;
+    openReports: number;
+  };
   orders: { count: number; gmv: number };
 }
 

@@ -3,6 +3,7 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 import * as RDialog from "@radix-ui/react-dialog";
 import {
+  BadgeDollarSign,
   Flag,
   HandCoins,
   LayoutList,
@@ -29,7 +30,14 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { useQueueCounts } from "@/lib/api/queries";
 
-type CountKey = "payments" | "brands" | "reports" | "settlements" | "tickets" | "ads";
+type CountKey =
+  | "payments"
+  | "brands"
+  | "reports"
+  | "settlements"
+  | "tickets"
+  | "ads"
+  | "payouts";
 
 interface NavItem {
   href: string;
@@ -45,13 +53,51 @@ const NAV: { group: string; items: NavItem[] }[] = [
     group: "يحتاج قرارك",
     items: [
       // The count is buyer-protection cases waiting for a decision (the store missed its 48 hours).
-      { href: "/support", label: "الدعم والشكاوى", icon: LifeBuoy, count: "tickets", ready: true },
+      {
+        href: "/support",
+        label: "الدعم والشكاوى",
+        icon: LifeBuoy,
+        count: "tickets",
+        ready: true,
+      },
       // The count is commission receipts waiting for review.
-      { href: "/commissions", label: "العمولات", icon: HandCoins, count: "settlements", ready: true },
+      {
+        href: "/commissions",
+        label: "العمولات",
+        icon: HandCoins,
+        count: "settlements",
+        ready: true,
+      },
       // The count is placement receipts waiting for review.
-      { href: "/ads", label: "الإعلانات", icon: Megaphone, count: "ads", ready: true },
-      { href: "/brands", label: "المتاجر", icon: Store, count: "brands", ready: true },
-      { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: true },
+      {
+        href: "/ads",
+        label: "الإعلانات",
+        icon: Megaphone,
+        count: "ads",
+        ready: true,
+      },
+      // The count is reseller payout requests waiting for an InstaPay transfer.
+      {
+        href: "/resellers",
+        label: "أرباح المسوّقين",
+        icon: BadgeDollarSign,
+        count: "payouts",
+        ready: true,
+      },
+      {
+        href: "/brands",
+        label: "المتاجر",
+        icon: Store,
+        count: "brands",
+        ready: true,
+      },
+      {
+        href: "/reports",
+        label: "البلاغات",
+        icon: Flag,
+        count: "reports",
+        ready: true,
+      },
     ],
   },
   {
@@ -60,11 +106,27 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
       { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
       { href: "/returns", label: "المرتجعات", icon: Undo2, ready: true },
-      { href: "/questions", label: "أسئلة المنتجات", icon: MessageCircleQuestion, ready: true },
-      { href: "/promotions", label: "العروض", icon: TicketPercent, ready: true },
+      {
+        href: "/questions",
+        label: "أسئلة المنتجات",
+        icon: MessageCircleQuestion,
+        ready: true,
+      },
+      {
+        href: "/promotions",
+        label: "العروض",
+        icon: TicketPercent,
+        ready: true,
+      },
       { href: "/users", label: "المستخدمون", icon: Users, ready: true },
       // Subscription payments from before the commission model; kept for the record.
-      { href: "/payments", label: "مدفوعات الباقات", icon: ReceiptText, count: "payments", ready: true },
+      {
+        href: "/payments",
+        label: "مدفوعات الباقات",
+        icon: ReceiptText,
+        count: "payments",
+        ready: true,
+      },
       { href: "/audit", label: "سجل العمليات", icon: ScrollText, ready: true },
       { href: "/settings", label: "الإعدادات", icon: Settings2, ready: true },
       { href: "/account", label: "حسابي", icon: UserRound, ready: true },
@@ -75,9 +137,20 @@ const NAV: { group: string; items: NavItem[] }[] = [
 function Wordmark() {
   return (
     <span className="flex items-center gap-2.5">
-      <Image src="/brand/fatrina-mark.png" alt="" width={36} height={36} priority className="h-9 w-auto" />
-      <span className="font-display text-section leading-none text-ink">فاترينة</span>
-      <span className="rounded-sm border border-line px-1.5 py-0.5 text-meta text-ink-3">الإدارة</span>
+      <Image
+        src="/brand/fatrina-mark.png"
+        alt=""
+        width={36}
+        height={36}
+        priority
+        className="h-9 w-auto"
+      />
+      <span className="font-display text-section leading-none text-ink">
+        فاترينة
+      </span>
+      <span className="rounded-sm border border-line px-1.5 py-0.5 text-meta text-ink-3">
+        الإدارة
+      </span>
     </span>
   );
 }
@@ -90,10 +163,15 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
     <nav aria-label="القائمة الرئيسية" className="flex flex-col gap-6">
       {NAV.map((section) => (
         <div key={section.group}>
-          <p className="mb-1.5 px-3 text-meta font-medium text-ink-3">{section.group}</p>
+          <p className="mb-1.5 px-3 text-meta font-medium text-ink-3">
+            {section.group}
+          </p>
           <ul className="flex flex-col gap-0.5">
             {section.items.map((item) => {
-              const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+              const active =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
               const count = item.count ? counts.data?.[item.count] : undefined;
               const body = (
                 <>
@@ -103,14 +181,18 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                     <span
                       className={cn(
                         "num min-w-6 rounded-full px-1.5 text-center text-meta font-semibold leading-5",
-                        active ? "bg-accent text-on-accent" : "bg-accent-soft text-accent",
+                        active
+                          ? "bg-accent text-on-accent"
+                          : "bg-accent-soft text-accent",
                       )}
                       aria-label={`${count} بانتظار القرار`}
                     >
                       {count}
                     </span>
                   ) : null}
-                  {!item.ready && <span className="text-meta text-ink-3">قريبًا</span>}
+                  {!item.ready && (
+                    <span className="text-meta text-ink-3">قريبًا</span>
+                  )}
                 </>
               );
               const base =
@@ -134,7 +216,11 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
                   ) : (
                     <Tooltip.Root>
                       <Tooltip.Trigger asChild>
-                        <span aria-disabled className={cn(base, "cursor-not-allowed text-ink-3")} tabIndex={0}>
+                        <span
+                          aria-disabled
+                          className={cn(base, "cursor-not-allowed text-ink-3")}
+                          tabIndex={0}
+                        >
                           {body}
                         </span>
                       </Tooltip.Trigger>
@@ -167,7 +253,9 @@ function LogoutButton() {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
-        await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+        await fetch("/api/auth/logout", { method: "POST" }).catch(
+          () => undefined,
+        );
         // Full reload on purpose: drops every cached query of the ended session.
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination
         window.location.assign("/login");
@@ -198,7 +286,10 @@ export function Rail() {
       <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-ground/95 px-4 backdrop-blur lg:hidden pt-[env(safe-area-inset-top)]">
         <Wordmark />
         <RDialog.Root open={open} onOpenChange={setOpen}>
-          <RDialog.Trigger aria-label="فتح القائمة" className="grid size-11 place-items-center rounded-sm text-ink hover:bg-surface">
+          <RDialog.Trigger
+            aria-label="فتح القائمة"
+            className="grid size-11 place-items-center rounded-sm text-ink hover:bg-surface"
+          >
             <Menu className="size-5" />
           </RDialog.Trigger>
           <RDialog.Portal>
@@ -213,8 +304,13 @@ export function Rail() {
                     <Wordmark />
                   </span>
                 </RDialog.Title>
-                <RDialog.Description className="sr-only">القائمة الرئيسية</RDialog.Description>
-                <RDialog.Close aria-label="إغلاق القائمة" className="grid size-11 place-items-center rounded-sm hover:bg-surface">
+                <RDialog.Description className="sr-only">
+                  القائمة الرئيسية
+                </RDialog.Description>
+                <RDialog.Close
+                  aria-label="إغلاق القائمة"
+                  className="grid size-11 place-items-center rounded-sm hover:bg-surface"
+                >
                   <X className="size-5" />
                 </RDialog.Close>
               </div>

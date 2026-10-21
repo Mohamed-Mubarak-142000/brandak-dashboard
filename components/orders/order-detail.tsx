@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { MapPin, Truck } from "lucide-react";
+import { Gift, MapPin, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -166,6 +166,9 @@ export function OrderDetail() {
 
   const o = order.data;
   const a = o.address;
+  // Coupon and points discounts have their own rows; whatever is left of discountTotal is "other".
+  const otherDiscount =
+    o.discountTotal - (o.coupon?.discount ?? 0) - (o.points?.discount ?? 0);
   const s = ORDER_STATUS[o.status];
   const addressLine = a
     ? [
@@ -189,6 +192,13 @@ export function OrderDetail() {
           <span className="flex flex-wrap items-center gap-3">
             <span className="num">{o.orderNumber}</span>
             <Badge tone={s.tone}>{s.label}</Badge>
+            {o.gift && (
+              <Badge tone="accent">
+                <Gift aria-hidden className="size-3.5" />
+                هدية
+              </Badge>
+            )}
+            {o.resale && <Badge tone="accent">طلب مسوّق</Badge>}
           </span>
         }
         description={
@@ -249,6 +259,14 @@ export function OrderDetail() {
                     <span className="num block text-ink-2">
                       {item.quantity} × {formatMoney(item.unitPrice)}
                     </span>
+                    {item.storeUnitPrice != null && (
+                      <span className="block text-meta text-ink-3">
+                        سعر المتجر{" "}
+                        <span className="num">
+                          {formatMoney(item.storeUnitPrice)}
+                        </span>
+                      </span>
+                    )}
                     <span className="num block font-semibold text-ink">
                       {formatMoney(item.lineTotal)}
                     </span>
@@ -287,13 +305,27 @@ export function OrderDetail() {
                   </dd>
                 </div>
               ) : null}
-              {o.discountTotal > (o.coupon?.discount ?? 0) && (
-                <div className="flex justify-between py-1">
-                  <dt className="text-ink-2">
-                    {o.coupon ? "خصم تاني" : "الخصم"}
+              {o.points && o.points.discount > 0 && (
+                <div className="flex items-start justify-between gap-3 py-1">
+                  <dt className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-2">
+                    <span>
+                      خصم نقاط فاترينة (
+                      <span className="num">{o.points.used}</span> نقطة)
+                    </span>
+                    <Badge tone="accent">على حساب فاترينة</Badge>
                   </dt>
                   <dd dir="ltr" className="num text-success">
-                    −{formatMoney(o.discountTotal - (o.coupon?.discount ?? 0))}
+                    −{formatMoney(o.points.discount)}
+                  </dd>
+                </div>
+              )}
+              {otherDiscount > 0 && (
+                <div className="flex justify-between py-1">
+                  <dt className="text-ink-2">
+                    {o.coupon || o.points?.discount ? "خصم تاني" : "الخصم"}
+                  </dt>
+                  <dd dir="ltr" className="num text-success">
+                    −{formatMoney(otherDiscount)}
                   </dd>
                 </div>
               )}
@@ -306,6 +338,17 @@ export function OrderDetail() {
                   ? "تم التحصيل عند الاستلام"
                   : "الدفع عند الاستلام"}
               </p>
+              {o.points && o.points.earned > 0 && (
+                <p className="mt-1 text-meta text-ink-3">
+                  نقاط اتكسبت: <span className="num">{o.points.earned}</span>
+                </p>
+              )}
+              {!!o.points?.discount && (
+                <p className="mt-1 text-meta text-ink-3">
+                  خصم النقاط بتدفعه فاترينة زي كوبونات فاترينة: بيتسجل للمتجر
+                  كتسوية لصالحه أول ما الطلب يتسلّم.
+                </p>
+              )}
               {o.coupon?.fundedBy === "PLATFORM" && (
                 <p className="mt-1 text-meta text-ink-3">
                   خصم الكوبون بتدفعه فاترينة: بيتسجل للمتجر كتسوية لصالحه في{" "}
@@ -346,6 +389,56 @@ export function OrderDetail() {
               )}
             </dl>
           </Panel>
+
+          {o.resale && (
+            <Panel>
+              <DetailList title="طلب مسوّق">
+                <DetailRow label="سعر البيع للعميل">
+                  <span className="num">{formatMoney(o.subtotal)}</span>
+                </DetailRow>
+                <DetailRow label="سعر المتجر">
+                  <span className="num">
+                    {formatMoney(o.subtotal - o.resale.margin)}
+                  </span>
+                </DetailRow>
+                <DetailRow label="ربح المسوّق" strong>
+                  <span className="num">{formatMoney(o.resale.margin)}</span>
+                </DetailRow>
+              </DetailList>
+              <p className="mt-3 text-meta text-ink-3">
+                المتجر بيحصّل الإجمالي كاش، وربح المسوّق بيتضاف على رصيد عمولته
+                في{" "}
+                <Link
+                  href={`/commissions/${o.brand.id}`}
+                  className="text-accent underline-offset-4 hover:underline"
+                >
+                  سجل العمولة
+                </Link>
+                ، وفاترينة بتحوّله للمسوّق على InstaPay بعد التسليم.
+              </p>
+            </Panel>
+          )}
+
+          {o.gift && (
+            <Panel>
+              <h2 className="mb-1 flex items-center gap-2 text-ui font-semibold text-ink">
+                <Gift aria-hidden className="size-4 text-accent" />
+                هدية
+              </h2>
+              {o.gift.message ? (
+                <p className="whitespace-pre-line text-ui text-ink-2">
+                  {o.gift.message}
+                </p>
+              ) : (
+                <p className="text-ui text-ink-3">من غير رسالة</p>
+              )}
+              {o.gift.hidePrices && (
+                <p className="mt-2 text-meta text-ink-3">
+                  من غير فاتورة بالسعر
+                </p>
+              )}
+            </Panel>
+          )}
 
           {o.notes && (
             <Panel>

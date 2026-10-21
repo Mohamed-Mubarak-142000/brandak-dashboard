@@ -6,13 +6,35 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api/client";
-import type { AdminBrand, AdminSubscription, AuditEntry, PaymentListItem } from "@/lib/api/types";
+import type {
+  AdminBrand,
+  AdminSubscription,
+  AuditEntry,
+  PaymentListItem,
+} from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { GOVERNORATE_NAMES } from "@/lib/governorates";
-import { BILLING_LABEL, formatDate, formatDateTime, formatMoney, formatPhone } from "@/lib/format";
-import { DetailList, DetailRow, Muted, Panel } from "@/components/data/detail-list";
+import {
+  BILLING_LABEL,
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatPhone,
+} from "@/lib/format";
+import {
+  DetailList,
+  DetailRow,
+  Muted,
+  Panel,
+} from "@/components/data/detail-list";
 import { PageHeader, PageShell } from "@/components/data/page-header";
-import { Badge, BRAND_STATUS, PAYMENT_STATUS, STORE_TYPE, SUBSCRIPTION_STATUS } from "@/components/ui/badge";
+import {
+  Badge,
+  BRAND_STATUS,
+  PAYMENT_STATUS,
+  STORE_TYPE,
+  SUBSCRIPTION_STATUS,
+} from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import { ActivityList } from "@/components/audit/activity-list";
@@ -21,29 +43,48 @@ import { CommissionPanel } from "@/components/commissions/commission-status";
 import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { ACTION_LABEL, BRAND_ACTIONS, useBrandActions } from "./brand-actions";
 
-const SOCIAL_LABEL: Record<string, string> = { instagram: "إنستجرام", facebook: "فيسبوك", tiktok: "تيك توك", website: "الموقع" };
+const SOCIAL_LABEL: Record<string, string> = {
+  instagram: "إنستجرام",
+  facebook: "فيسبوك",
+  tiktok: "تيك توك",
+  website: "الموقع",
+};
 
 export function BrandDetail() {
   const { id } = useParams<{ id: string }>();
-  const brand = useQuery({ queryKey: ["brand", id], queryFn: () => api.get<AdminBrand>(`/admin/brands/${id}`) });
+  const brand = useQuery({
+    queryKey: ["brand", id],
+    queryFn: () => api.get<AdminBrand>(`/admin/brands/${id}`),
+  });
   const subs = useQuery({
     queryKey: ["brand", id, "subscriptions"],
-    queryFn: () => api.page<AdminSubscription>("/admin/subscriptions", { brandId: id, limit: 20 }),
+    queryFn: () =>
+      api.page<AdminSubscription>("/admin/subscriptions", {
+        brandId: id,
+        limit: 20,
+      }),
   });
   const payments = useQuery({
     queryKey: ["brand", id, "payments"],
-    queryFn: () => api.page<PaymentListItem>("/admin/payments", { brandId: id, limit: 20 }),
+    queryFn: () =>
+      api.page<PaymentListItem>("/admin/payments", { brandId: id, limit: 20 }),
   });
   const activity = useQuery({
     queryKey: ["brand", id, "activity"],
-    queryFn: () => api.page<AuditEntry>("/admin/audit-logs", { entityType: "Brand", entityId: id, limit: 30 }),
+    queryFn: () =>
+      api.page<AuditEntry>("/admin/audit-logs", {
+        entityType: "Brand",
+        entityId: id,
+        limit: 30,
+      }),
   });
   const actions = useBrandActions();
   const del = useSoftDelete({
     base: "/admin/brands",
     noun: "المتجر",
     invalidate: [["brands"], ["brand"]],
-    warning: "هيختفي من التطبيق فورًا وصاحبه مش هيقدر يدخل لوحة المتجر. الطلبات القديمة مش بتتأثر.",
+    warning:
+      "هيختفي من التطبيق فورًا وصاحبه مش هيقدر يدخل لوحة المتجر. الطلبات القديمة مش بتتأثر.",
   });
 
   if (brand.isPending) return <DetailSkeleton />;
@@ -67,14 +108,26 @@ export function BrandDetail() {
         back={{ href: "/brands", label: "كل البراندات" }}
         title={
           <span className="flex flex-wrap items-center gap-3">
-            {b.logo?.url && <Image src={b.logo.url} alt="" width={40} height={40} unoptimized className="size-10 rounded-sm border border-line object-cover" />}
+            {b.logo?.url && (
+              <Image
+                src={b.logo.url}
+                alt=""
+                width={40}
+                height={40}
+                unoptimized
+                className="size-10 rounded-sm border border-line object-cover"
+              />
+            )}
             {b.name}
             <Badge tone={status.tone}>{status.label}</Badge>
           </span>
         }
         description={
           b.isVisible ? (
-            <span className="text-success">ظاهر للعملاء{b.approvedAt ? <> منذ {formatDate(b.approvedAt)}</> : null}</span>
+            <span className="text-success">
+              ظاهر للعملاء
+              {b.approvedAt ? <> منذ {formatDate(b.approvedAt)}</> : null}
+            </span>
           ) : b.status === "ACTIVE" ? (
             <span className="text-warning">مخفي عن العملاء</span>
           ) : (
@@ -86,7 +139,11 @@ export function BrandDetail() {
             {allowed.map((kind) => (
               <Button
                 key={kind}
-                variant={kind === "approve" || kind === "reinstate" ? "primary" : "danger"}
+                variant={
+                  kind === "approve" || kind === "reinstate"
+                    ? "primary"
+                    : "danger"
+                }
                 loading={actions.pendingKind === kind}
                 disabled={actions.pending}
                 onClick={() => actions.run(kind, b)}
@@ -95,11 +152,19 @@ export function BrandDetail() {
               </Button>
             ))}
             {b.deletedAt ? (
-              <Button variant="primary" loading={del.pending} onClick={() => del.restore({ id: b._id, name: b.name })}>
+              <Button
+                variant="primary"
+                loading={del.pending}
+                onClick={() => del.restore({ id: b._id, name: b.name })}
+              >
                 استرجاع المتجر
               </Button>
             ) : (
-              <Button variant="danger" disabled={del.pending} onClick={() => del.askDelete({ id: b._id, name: b.name })}>
+              <Button
+                variant="danger"
+                disabled={del.pending}
+                onClick={() => del.askDelete({ id: b._id, name: b.name })}
+              >
                 حذف المتجر
               </Button>
             )}
@@ -109,17 +174,25 @@ export function BrandDetail() {
 
       {b.deletedAt && (
         <div className="mt-6 rounded-sm border border-danger/30 bg-danger-soft px-4 py-3 text-ui">
-          <p className="font-semibold text-danger">المتجر محذوف منذ {formatDate(b.deletedAt)}</p>
-          <p className="mt-1 text-ink">مخفي عن العملاء وصاحبه مش قادر يدخل لوحة المتجر. استرجعه عشان يرجع زي ما كان.</p>
+          <p className="font-semibold text-danger">
+            المتجر محذوف منذ {formatDate(b.deletedAt)}
+          </p>
+          <p className="mt-1 text-ink">
+            مخفي عن العملاء وصاحبه مش قادر يدخل لوحة المتجر. استرجعه عشان يرجع
+            زي ما كان.
+          </p>
         </div>
       )}
 
-      {b.statusReason && (b.status === "REJECTED" || b.status === "SUSPENDED") && (
-        <div className="mt-6 rounded-sm border border-danger/30 bg-danger-soft px-4 py-3 text-ui">
-          <p className="font-semibold text-danger">{b.status === "REJECTED" ? "سبب الرفض" : "سبب الإيقاف"}</p>
-          <p className="mt-1 text-ink">{b.statusReason}</p>
-        </div>
-      )}
+      {b.statusReason &&
+        (b.status === "REJECTED" || b.status === "SUSPENDED") && (
+          <div className="mt-6 rounded-sm border border-danger/30 bg-danger-soft px-4 py-3 text-ui">
+            <p className="font-semibold text-danger">
+              {b.status === "REJECTED" ? "سبب الرفض" : "سبب الإيقاف"}
+            </p>
+            <p className="mt-1 text-ink">{b.statusReason}</p>
+          </div>
+        )}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-6">
@@ -131,9 +204,15 @@ export function BrandDetail() {
               <DetailRow label="الرابط">
                 <span className="num text-ui">{b.slug}</span>
               </DetailRow>
-              <DetailRow label="الوصف">{b.description || <Muted>لا يوجد وصف</Muted>}</DetailRow>
+              <DetailRow label="الوصف">
+                {b.description || <Muted>لا يوجد وصف</Muted>}
+              </DetailRow>
               <DetailRow label="التصنيفات">
-                {b.categoryIds.map((c) => (typeof c === "object" ? <Badge key={c._id}>{c.nameAr}</Badge> : null))}
+                {b.categoryIds.map((c) =>
+                  typeof c === "object" ? (
+                    <Badge key={c._id}>{c.nameAr}</Badge>
+                  ) : null,
+                )}
               </DetailRow>
               <DetailRow label="هاتف التواصل">
                 <span className="num">{formatPhone(b.contact.phone)}</span>
@@ -148,12 +227,19 @@ export function BrandDetail() {
                   <span className="num">{b.contact.email}</span>
                 </DetailRow>
               )}
-              {Object.entries(b.socialLinks ?? {}).filter(([, v]) => v).length > 0 && (
+              {Object.entries(b.socialLinks ?? {}).filter(([, v]) => v).length >
+                0 && (
                 <DetailRow label="السوشيال ميديا">
                   {Object.entries(b.socialLinks)
                     .filter(([, v]) => v)
                     .map(([k, v]) => (
-                      <a key={k} href={v} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-ui text-accent underline-offset-4 hover:underline">
+                      <a
+                        key={k}
+                        href={v}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-ui text-accent underline-offset-4 hover:underline"
+                      >
                         {SOCIAL_LABEL[k] ?? k}
                         <ExternalLink aria-hidden className="size-3.5" />
                       </a>
@@ -163,7 +249,10 @@ export function BrandDetail() {
               <DetailRow label="التقييم">
                 {b.ratingCount ? (
                   <>
-                    <span className="num font-semibold">{b.ratingAvg.toFixed(1)}</span> <Muted>من {b.ratingCount} تقييم</Muted>
+                    <span className="num font-semibold">
+                      {b.ratingAvg.toFixed(1)}
+                    </span>{" "}
+                    <Muted>من {b.ratingCount} تقييم</Muted>
                   </>
                 ) : (
                   <Muted>لا توجد تقييمات بعد</Muted>
@@ -177,23 +266,67 @@ export function BrandDetail() {
 
           <Panel>
             <DetailList title="الشحن والسياسات">
-              <DetailRow label="يستقبل طلبات">{s.acceptsOrders ? "نعم" : <span className="text-warning">متوقف مؤقتًا</span>}</DetailRow>
+              <DetailRow label="يستقبل طلبات">
+                {s.acceptsOrders ? (
+                  "نعم"
+                ) : (
+                  <span className="text-warning">متوقف مؤقتًا</span>
+                )}
+              </DetailRow>
               <DetailRow label="مدة التجهيز">
                 <span className="num">{s.processingDays}</span> أيام
               </DetailRow>
-              <DetailRow label="الحد الأدنى للطلب">{s.minOrderAmount ? <span className="num">{formatMoney(s.minOrderAmount)}</span> : <Muted>لا يوجد</Muted>}</DetailRow>
+              <DetailRow label="الحد الأدنى للطلب">
+                {s.minOrderAmount ? (
+                  <span className="num">{formatMoney(s.minOrderAmount)}</span>
+                ) : (
+                  <Muted>لا يوجد</Muted>
+                )}
+              </DetailRow>
               <DetailRow label="شحن مجاني من">
-                {s.freeShippingThreshold != null ? <span className="num">{formatMoney(s.freeShippingThreshold)}</span> : <Muted>غير متاح</Muted>}
+                {s.freeShippingThreshold != null ? (
+                  <span className="num">
+                    {formatMoney(s.freeShippingThreshold)}
+                  </span>
+                ) : (
+                  <Muted>غير متاح</Muted>
+                )}
               </DetailRow>
               <DetailRow label="باقي المحافظات">
-                {s.defaultShippingFee != null ? <span className="num">{formatMoney(s.defaultShippingFee)}</span> : <Muted>لا يوصّل خارج المناطق المحددة</Muted>}
+                {s.defaultShippingFee != null ? (
+                  <span className="num">
+                    {formatMoney(s.defaultShippingFee)}
+                  </span>
+                ) : (
+                  <Muted>لا يوصّل خارج المناطق المحددة</Muted>
+                )}
+              </DetailRow>
+              {/* Older stores have no value saved; the API treats that as 14 days. */}
+              <DetailRow label="مدة الإرجاع">
+                <span className="num">{s.returnDays ?? 14}</span> يوم
+              </DetailRow>
+              <DetailRow label="استلام من المتجر">
+                {s.pickup?.enabled ? (
+                  s.pickup.address || "متاح"
+                ) : (
+                  <Muted>غير متاح</Muted>
+                )}
+              </DetailRow>
+              <DetailRow label="بيشتغل مع المسوّقين">
+                {s.allowResellers ? "نعم" : <Muted>لا</Muted>}
               </DetailRow>
             </DetailList>
             {s.shippingZones.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-2">
                 {s.shippingZones.map((z) => (
-                  <li key={z.governorate} className="rounded-sm border border-line bg-sunken px-2.5 py-1 text-ui">
-                    {GOVERNORATE_NAMES[z.governorate] ?? z.governorate} <span className="num font-semibold">{formatMoney(z.fee)}</span>
+                  <li
+                    key={z.governorate}
+                    className="rounded-sm border border-line bg-sunken px-2.5 py-1 text-ui"
+                  >
+                    {GOVERNORATE_NAMES[z.governorate] ?? z.governorate}{" "}
+                    <span className="num font-semibold">
+                      {formatMoney(z.fee)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -206,7 +339,9 @@ export function BrandDetail() {
 
           <Panel>
             <DetailList title="صاحب البراند">
-              <DetailRow label="الاسم">{owner?.name ?? <Muted>غير متاح</Muted>}</DetailRow>
+              <DetailRow label="الاسم">
+                {owner?.name ?? <Muted>غير متاح</Muted>}
+              </DetailRow>
               <DetailRow label="البريد">
                 <span className="num">{owner?.email ?? "—"}</span>
               </DetailRow>
@@ -217,8 +352,12 @@ export function BrandDetail() {
           </Panel>
 
           <Panel>
-            <h2 className="text-ui font-semibold text-ink">اشتراكات الباقات القديمة</h2>
-            <p className="mb-3 mt-0.5 text-meta text-ink-3">للسجل فقط؛ المنصة دلوقتي بتاخد عمولة على كل طلب بدل الباقات.</p>
+            <h2 className="text-ui font-semibold text-ink">
+              اشتراكات الباقات القديمة
+            </h2>
+            <p className="mb-3 mt-0.5 text-meta text-ink-3">
+              للسجل فقط؛ المنصة دلوقتي بتاخد عمولة على كل طلب بدل الباقات.
+            </p>
             {subs.isPending ? (
               <Skeleton className="h-16 w-full" />
             ) : !subs.data?.items.length ? (
@@ -226,16 +365,32 @@ export function BrandDetail() {
             ) : (
               <ul className="flex flex-col divide-y divide-line">
                 {subs.data.items.map((sub) => (
-                  <li key={sub._id} className="flex items-center justify-between gap-3 py-2.5">
+                  <li
+                    key={sub._id}
+                    className="flex items-center justify-between gap-3 py-2.5"
+                  >
                     <span className="flex flex-col">
                       <span className="text-ui font-medium text-ink">
-                        {sub.planSnapshot.nameAr}، {BILLING_LABEL[sub.billingPeriod]} — <span className="num">{formatMoney(sub.planSnapshot.price)}</span>
+                        {sub.planSnapshot.nameAr}،{" "}
+                        {BILLING_LABEL[sub.billingPeriod]} —{" "}
+                        <span className="num">
+                          {formatMoney(sub.planSnapshot.price)}
+                        </span>
                       </span>
                       <span className="text-meta text-ink-3">
-                        {sub.startsAt ? <>من {formatDate(sub.startsAt)} إلى {formatDate(sub.endsAt)}</> : <>طُلب في {formatDate(sub.createdAt)}</>}
+                        {sub.startsAt ? (
+                          <>
+                            من {formatDate(sub.startsAt)} إلى{" "}
+                            {formatDate(sub.endsAt)}
+                          </>
+                        ) : (
+                          <>طُلب في {formatDate(sub.createdAt)}</>
+                        )}
                       </span>
                     </span>
-                    <Badge tone={SUBSCRIPTION_STATUS[sub.status].tone}>{SUBSCRIPTION_STATUS[sub.status].label}</Badge>
+                    <Badge tone={SUBSCRIPTION_STATUS[sub.status].tone}>
+                      {SUBSCRIPTION_STATUS[sub.status].label}
+                    </Badge>
                   </li>
                 ))}
               </ul>
@@ -243,7 +398,9 @@ export function BrandDetail() {
           </Panel>
 
           <Panel>
-            <h2 className="mb-3 text-ui font-semibold text-ink">مدفوعات الباقات القديمة</h2>
+            <h2 className="mb-3 text-ui font-semibold text-ink">
+              مدفوعات الباقات القديمة
+            </h2>
             {payments.isPending ? (
               <Skeleton className="h-16 w-full" />
             ) : !payments.data?.items.length ? (
@@ -252,12 +409,21 @@ export function BrandDetail() {
               <ul className="flex flex-col divide-y divide-line">
                 {payments.data.items.map((p) => (
                   <li key={p._id}>
-                    <Link href={`/payments/${p._id}`} className="flex items-center justify-between gap-3 py-2.5 hover:text-accent">
+                    <Link
+                      href={`/payments/${p._id}`}
+                      className="flex items-center justify-between gap-3 py-2.5 hover:text-accent"
+                    >
                       <span className="flex flex-col">
-                        <span className="num text-ui font-semibold">{formatMoney(p.amount)}</span>
-                        <span className="text-meta text-ink-3">{formatDateTime(p.submittedAt ?? p.createdAt)}</span>
+                        <span className="num text-ui font-semibold">
+                          {formatMoney(p.amount)}
+                        </span>
+                        <span className="text-meta text-ink-3">
+                          {formatDateTime(p.submittedAt ?? p.createdAt)}
+                        </span>
                       </span>
-                      <Badge tone={PAYMENT_STATUS[p.status].tone}>{PAYMENT_STATUS[p.status].label}</Badge>
+                      <Badge tone={PAYMENT_STATUS[p.status].tone}>
+                        {PAYMENT_STATUS[p.status].label}
+                      </Badge>
                     </Link>
                   </li>
                 ))}
@@ -266,7 +432,9 @@ export function BrandDetail() {
           </Panel>
 
           <Panel>
-            <h2 className="mb-3 text-ui font-semibold text-ink">سجل الإجراءات</h2>
+            <h2 className="mb-3 text-ui font-semibold text-ink">
+              سجل الإجراءات
+            </h2>
             <ActivityList query={activity} empty="لا توجد إجراءات مسجّلة." />
           </Panel>
         </div>
@@ -281,10 +449,25 @@ export function BrandDetail() {
 function ProtectionStrikes({ strikes }: { strikes: number }) {
   return (
     <>
-      <span className={cn("num font-semibold", strikes >= MAX_STRIKES ? "text-danger" : strikes > 0 ? "text-warning" : "text-ink")}>
+      <span
+        className={cn(
+          "num font-semibold",
+          strikes >= MAX_STRIKES
+            ? "text-danger"
+            : strikes > 0
+              ? "text-warning"
+              : "text-ink",
+        )}
+      >
         {strikes}/{MAX_STRIKES}
       </span>
-      <Muted>{strikes >= MAX_STRIKES ? "اتوقف تلقائيًا بعد آخر حكم ضده" : strikes > 0 ? "الحكم الثالث ضده بيوقفه تلقائيًا" : "مفيش شكاوى اتحكمت ضده"}</Muted>
+      <Muted>
+        {strikes >= MAX_STRIKES
+          ? "اتوقف تلقائيًا بعد آخر حكم ضده"
+          : strikes > 0
+            ? "الحكم الثالث ضده بيوقفه تلقائيًا"
+            : "مفيش شكاوى اتحكمت ضده"}
+      </Muted>
     </>
   );
 }

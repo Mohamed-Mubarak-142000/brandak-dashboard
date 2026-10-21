@@ -10,7 +10,15 @@ const tones: Record<Tone, string> = {
   danger: "bg-danger-soft text-danger border-danger/20",
 };
 
-export function Badge({ tone = "neutral", className, children }: { tone?: Tone; className?: string; children: React.ReactNode }) {
+export function Badge({
+  tone = "neutral",
+  className,
+  children,
+}: {
+  tone?: Tone;
+  className?: string;
+  children: React.ReactNode;
+}) {
   return (
     <span
       className={cn(
@@ -46,7 +54,10 @@ export const BRAND_STATUS: Record<string, { label: string; tone: Tone }> = {
   SUSPENDED: { label: "موقوف", tone: "danger" },
 };
 
-export const SUBSCRIPTION_STATUS: Record<string, { label: string; tone: Tone }> = {
+export const SUBSCRIPTION_STATUS: Record<
+  string,
+  { label: string; tone: Tone }
+> = {
   PENDING_PAYMENT: { label: "بانتظار الدفع", tone: "warning" },
   ACTIVE: { label: "فعّال", tone: "success" },
   EXPIRED: { label: "منتهي", tone: "neutral" },
@@ -65,11 +76,12 @@ export const ORDER_STATUS: Record<string, { label: string; tone: Tone }> = {
 };
 
 /** Commission settlements: a store paying what it owes by InstaPay. */
-export const SETTLEMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
-  PENDING_REVIEW: { label: "قيد المراجعة", tone: "warning" },
-  APPROVED: { label: "معتمد", tone: "success" },
-  REJECTED: { label: "مرفوض", tone: "danger" },
-};
+export const SETTLEMENT_STATUS: Record<string, { label: string; tone: Tone }> =
+  {
+    PENDING_REVIEW: { label: "قيد المراجعة", tone: "warning" },
+    APPROVED: { label: "معتمد", tone: "success" },
+    REJECTED: { label: "مرفوض", tone: "danger" },
+  };
 
 export const REPORT_STATUS: Record<string, { label: string; tone: Tone }> = {
   OPEN: { label: "مفتوح", tone: "warning" },
@@ -98,6 +110,13 @@ export const RETURN_STATUS: Record<string, { label: string; tone: Tone }> = {
   RECEIVED: { label: "المتجر استلم", tone: "accent" },
   REFUNDED: { label: "الفلوس رجعت", tone: "success" },
   CANCELLED: { label: "اتلغى", tone: "neutral" },
+};
+
+/** Reseller payout requests: Fatrina transfers the margin by InstaPay. */
+export const PAYOUT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  REQUESTED: { label: "مستني التحويل", tone: "warning" },
+  PAID: { label: "اتحوّل", tone: "success" },
+  REJECTED: { label: "اترفض", tone: "danger" },
 };
 
 /** Paid placements. */
