@@ -27,7 +27,7 @@ export function VerifiedStamp({ date, animate }: { date?: string; animate?: bool
         className="flex flex-col items-center gap-1 rounded-md border-[3px] border-brand px-6 py-3 text-accent mix-blend-multiply"
         style={{ boxShadow: "inset 0 0 0 2px var(--surface), inset 0 0 0 4px var(--brand)" }}
       >
-        <Image src="/brand/brandak-mark.png" alt="" width={22} height={28} className="h-7 w-auto" />
+        <Image src="/brand/fatrina-mark.png" alt="" width={28} height={28} className="h-7 w-auto" />
         <span className="font-display text-[34px] leading-none font-bold">تم التحقق</span>
         {date && <span className="text-meta font-semibold">{formatDate(date)}</span>}
       </div>
