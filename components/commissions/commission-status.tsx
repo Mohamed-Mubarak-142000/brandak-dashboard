@@ -16,7 +16,8 @@ export const LEDGER_TYPE: Record<LedgerType, { label: string; tone: "neutral" | 
   COMMISSION: { label: "عمولة طلب", tone: "accent" },
   REVERSAL: { label: "مرتجع", tone: "neutral" },
   PAYMENT: { label: "سداد", tone: "success" },
-  ADJUSTMENT: { label: "تسوية يدوية", tone: "warning" },
+  // Manual corrections, and the platform crediting a store for a Fatrina coupon (the note says which).
+  ADJUSTMENT: { label: "تسوية", tone: "warning" },
 };
 
 /** 0.05 → "5%", 0.025 → "2.5%". */

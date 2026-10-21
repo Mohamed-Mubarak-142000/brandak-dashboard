@@ -60,8 +60,8 @@
   --color-danger-hover: var(--danger-hover);
   --color-danger-soft: var(--danger-soft);
 
-  --font-sans: var(--font-plex), system-ui, sans-serif;
-  --font-display: var(--font-kufi), var(--font-plex), sans-serif;
+  --font-sans: var(--font-cairo), system-ui, sans-serif;
+  --font-display: var(--font-cairo), system-ui, sans-serif;
 
   /* Type scale (px): 12 meta · 14 UI · 16 body · 20 section · 28 page · 40 display */
   --text-meta: 0.75rem;

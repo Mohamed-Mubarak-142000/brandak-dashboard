@@ -19,6 +19,10 @@ export const qk = {
   settlementCounts: ["commissions", "settlements", "counts"] as const,
   settlementProof: (id: string) => ["settlement", id, "proof"] as const,
   platformSettings: ["platform-settings"] as const,
+  // Promotions: everything under ["promotions"].
+  coupons: ["promotions", "coupons"] as const,
+  campaigns: ["promotions", "campaigns"] as const,
+  campaignProducts: (campaignId: string, limit: number) => ["promotions", "campaigns", campaignId, "products", limit] as const,
 };
 
 /** Number of items waiting in each admin queue (shown in the rail). */

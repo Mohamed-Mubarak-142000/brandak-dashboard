@@ -51,6 +51,9 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   SETTLEMENT_APPROVED: "اعتمد سداد عمولة",
   SETTLEMENT_REJECTED: "رفض إيصال سداد عمولة",
   SUBSCRIPTION_FREE_ACTIVATED: "فعّل باقة مجانية",
+  COUPON_CREATED: "أنشأ كوبون فاترينة",
+  CAMPAIGN_CREATED: "أنشأ موسم عروض",
+  CAMPAIGN_UPDATED: "عدّل موسم عروض",
 };
 
 export const ENTITY_LABEL: Record<string, string> = {
@@ -65,6 +68,8 @@ export const ENTITY_LABEL: Record<string, string> = {
   User: "مستخدم",
   Settlement: "سداد عمولة",
   PlatformSettings: "إعدادات المنصة",
+  Coupon: "كوبون",
+  Campaign: "موسم عروض",
 };
 
 export function actorName(entry: AuditEntry) {

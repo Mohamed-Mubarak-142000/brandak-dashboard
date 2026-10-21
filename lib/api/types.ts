@@ -212,6 +212,27 @@ export interface OrderDetail extends OrderSummary {
   allowedNextStatuses: OrderStatus[];
   /** Set on delivered orders (admin view); null when no commission was charged. */
   commission?: OrderCommission | null;
+  /** The coupon used at checkout; null/missing when none. Its discount is part of discountTotal. */
+  coupon?: OrderCoupon | null;
+  /** Set once the store ships the order; null/missing before that. */
+  shipment?: OrderShipment | null;
+}
+
+/** BRAND = a store's own coupon; PLATFORM = a Fatrina coupon, credited back to the store on delivery. */
+export type CouponFunder = "BRAND" | "PLATFORM";
+
+export interface OrderCoupon {
+  code: string;
+  /** EGP taken off the order. */
+  discount: number;
+  fundedBy: CouponFunder;
+}
+
+export interface OrderShipment {
+  carrier: string;
+  trackingNumber: string;
+  trackingUrl: string | null;
+  shippedAt: string;
 }
 
 // ---------- Moderation ----------
@@ -379,6 +400,60 @@ export interface Settlement {
   createdAt: string;
   reviewedAt?: string;
   rejectionReason?: string;
+}
+
+// ---------- Promotions ----------
+
+export type CouponType = "PERCENT" | "FIXED";
+
+/** GET /admin/coupons — Fatrina-wide coupons (brandId null), valid in every store; the platform pays the discount. */
+export interface AdminCoupon {
+  _id: string;
+  brandId: null;
+  /** Stored upper-case. */
+  code: string;
+  type: CouponType;
+  /** PERCENT: 1..90 (%); FIXED: EGP >= 1. */
+  value: number;
+  /** Cap on a percent discount, EGP; null = no cap. */
+  maxDiscount: number | null;
+  minSubtotal: number;
+  /** null = unlimited. */
+  maxUses: number | null;
+  usedCount: number;
+  perUserLimit: number;
+  startsAt: string;
+  endsAt: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/** GET /admin/campaigns — a season (e.g. «الجمعة البيضاء») stores join by putting products on sale inside it. */
+export interface Campaign {
+  _id: string;
+  nameAr: string;
+  slug: string;
+  descriptionAr: string;
+  startsAt: string;
+  endsAt: string;
+  /** Smallest sale percent a product needs to count in the season. */
+  minPercent: number;
+  /** Hex, e.g. #F16B21. */
+  color: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+/** Public product card (GET /products?campaignId=…). */
+export interface ProductCard {
+  id: string;
+  title: string;
+  /** Current (sale) price. */
+  price: number;
+  compareAtPrice: number | null;
+  sale: { percent: number; endsAt: string; campaignId: string | null } | null;
+  imageUrl: string | null;
+  brand: { id?: string; name: string; slug?: string };
 }
 
 // ---------- Analytics ----------

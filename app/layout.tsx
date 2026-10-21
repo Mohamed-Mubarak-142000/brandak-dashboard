@@ -1,20 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_Arabic, Reem_Kufi } from "next/font/google";
+import { Cairo } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
 
-const plex = IBM_Plex_Sans_Arabic({
+// One family for everything: Cairo is clear at small sizes and familiar to Egyptian users.
+const cairo = Cairo({
   subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-plex",
-  display: "swap",
-});
-
-// Kufic display face — used only for page titles, the wordmark and the verification stamp.
-const kufi = Reem_Kufi({
-  subsets: ["arabic", "latin"],
-  weight: ["500", "700"],
-  variable: "--font-kufi",
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-cairo",
   display: "swap",
 });
 
@@ -31,7 +24,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ar" dir="rtl" className={`${plex.variable} ${kufi.variable}`}>
+    <html lang="ar" dir="rtl" className={`${cairo.variable}`}>
       <body>
         <Providers>{children}</Providers>
       </body>

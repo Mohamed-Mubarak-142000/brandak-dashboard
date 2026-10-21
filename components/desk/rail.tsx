@@ -12,6 +12,7 @@ import {
   ScrollText,
   Settings2,
   ShoppingBag,
+  TicketPercent,
   Store,
   UserRound,
   Users,
@@ -50,6 +51,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
       { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
+      { href: "/promotions", label: "العروض", icon: TicketPercent, ready: true },
       { href: "/users", label: "المستخدمون", icon: Users, ready: true },
       // Subscription payments from before the commission model; kept for the record.
       { href: "/payments", label: "مدفوعات الباقات", icon: ReceiptText, count: "payments", ready: true },

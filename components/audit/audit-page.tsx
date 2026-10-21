@@ -21,7 +21,7 @@ const EMPTY: AuditEntry[] = [];
 
 const ENTITY_OPTIONS = [
   { value: "ALL", label: "كل العناصر" },
-  ...["Brand", "Settlement", "Payment", "Order", "Report", "Review", "Product", "User", "PlatformSettings", "SubscriptionPlan"].map((v) => ({ value: v, label: ENTITY_LABEL[v] })),
+  ...["Brand", "Settlement", "Payment", "Order", "Report", "Review", "Product", "User", "PlatformSettings", "Coupon", "Campaign", "SubscriptionPlan"].map((v) => ({ value: v, label: ENTITY_LABEL[v] })),
 ];
 
 /** Pages that exist for an entity, so the log can link straight to it. */
@@ -29,6 +29,8 @@ const ENTITY_HREF: Record<string, (id: string) => string> = {
   Brand: (id) => `/brands/${id}`,
   Payment: (id) => `/payments/${id}`,
   Order: (id) => `/orders/${id}`,
+  Coupon: () => "/promotions",
+  Campaign: () => "/promotions?tab=campaigns",
 };
 
 export function AuditPage() {

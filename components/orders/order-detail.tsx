@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { MapPin } from "lucide-react";
+import { MapPin, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -176,11 +176,44 @@ export function OrderDetail() {
                 <dt className="text-ink-2">الشحن</dt>
                 <dd className="num">{o.shippingFee ? formatMoney(o.shippingFee) : "مجاني"}</dd>
               </div>
+              {o.coupon ? (
+                <div className="flex items-start justify-between gap-3 py-1">
+                  <dt className="flex flex-wrap items-center gap-x-2 gap-y-1 text-ink-2">
+                    <span>
+                      كوبون{" "}
+                      <span dir="ltr" className="num font-semibold text-ink">
+                        {o.coupon.code}
+                      </span>
+                    </span>
+                    {o.coupon.fundedBy === "PLATFORM" ? <Badge tone="accent">على حساب فاترينة</Badge> : <Badge>على حساب المتجر</Badge>}
+                  </dt>
+                  <dd dir="ltr" className="num text-success">
+                    −{formatMoney(o.coupon.discount)}
+                  </dd>
+                </div>
+              ) : null}
+              {o.discountTotal > (o.coupon?.discount ?? 0) && (
+                <div className="flex justify-between py-1">
+                  <dt className="text-ink-2">{o.coupon ? "خصم تاني" : "الخصم"}</dt>
+                  <dd dir="ltr" className="num text-success">
+                    −{formatMoney(o.discountTotal - (o.coupon?.discount ?? 0))}
+                  </dd>
+                </div>
+              )}
               <div className="mt-1 flex justify-between border-t border-line pt-2 text-body font-semibold">
                 <dt>الإجمالي</dt>
                 <dd className="num">{formatMoney(o.grandTotal)}</dd>
               </div>
               <p className="mt-1 text-meta text-ink-3">{o.paymentStatus === "PAID" ? "تم التحصيل عند الاستلام" : "الدفع عند الاستلام"}</p>
+              {o.coupon?.fundedBy === "PLATFORM" && (
+                <p className="mt-1 text-meta text-ink-3">
+                  خصم الكوبون بتدفعه فاترينة: بيتسجل للمتجر كتسوية لصالحه في{" "}
+                  <Link href={`/commissions/${o.brand.id}`} className="text-accent underline-offset-4 hover:underline">
+                    سجل العمولة
+                  </Link>{" "}
+                  أول ما الطلب يتسلّم.
+                </p>
+              )}
               {o.commission && (
                 <div className="mt-3 flex justify-between border-t border-dashed border-line pt-2">
                   <dt className="text-ink-2">
@@ -212,6 +245,37 @@ export function OrderDetail() {
             <h2 className="mb-4 text-ui font-semibold text-ink">مسار الطلب</h2>
             <StatusTimeline order={o} />
           </Panel>
+
+          {o.shipment && (
+            <Panel>
+              <DetailList title="الشحنة">
+                <DetailRow label="شركة الشحن">{o.shipment.carrier || <Muted>—</Muted>}</DetailRow>
+                <DetailRow label="رقم التتبع">
+                  {o.shipment.trackingNumber ? (
+                    <span dir="ltr" className="num select-all">
+                      {o.shipment.trackingNumber}
+                    </span>
+                  ) : (
+                    <Muted>—</Muted>
+                  )}
+                </DetailRow>
+                <DetailRow label="تاريخ الشحن">{formatDateTime(o.shipment.shippedAt)}</DetailRow>
+                {o.shipment.trackingUrl && /^https?:\/\//i.test(o.shipment.trackingUrl) && (
+                  <DetailRow label="التتبع">
+                    <a
+                      href={o.shipment.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-ui text-accent underline-offset-4 hover:underline"
+                    >
+                      <Truck aria-hidden className="size-4" />
+                      تتبّع الشحنة على موقع الشركة
+                    </a>
+                  </DetailRow>
+                )}
+              </DetailList>
+            </Panel>
+          )}
 
           <Panel>
             <DetailList title="العميل والتوصيل">
