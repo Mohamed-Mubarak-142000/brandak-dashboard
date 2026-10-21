@@ -6,7 +6,9 @@ import {
   Flag,
   HandCoins,
   LayoutList,
+  LifeBuoy,
   LogOut,
+  Megaphone,
   Menu,
   ReceiptText,
   ScrollText,
@@ -14,6 +16,7 @@ import {
   ShoppingBag,
   TicketPercent,
   Store,
+  Undo2,
   UserRound,
   Users,
   X,
@@ -25,7 +28,7 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { useQueueCounts } from "@/lib/api/queries";
 
-type CountKey = "payments" | "brands" | "reports" | "settlements";
+type CountKey = "payments" | "brands" | "reports" | "settlements" | "tickets" | "ads";
 
 interface NavItem {
   href: string;
@@ -40,8 +43,12 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "يحتاج قرارك",
     items: [
+      // The count is buyer-protection cases waiting for a decision (the store missed its 48 hours).
+      { href: "/support", label: "الدعم والشكاوى", icon: LifeBuoy, count: "tickets", ready: true },
       // The count is commission receipts waiting for review.
       { href: "/commissions", label: "العمولات", icon: HandCoins, count: "settlements", ready: true },
+      // The count is placement receipts waiting for review.
+      { href: "/ads", label: "الإعلانات", icon: Megaphone, count: "ads", ready: true },
       { href: "/brands", label: "المتاجر", icon: Store, count: "brands", ready: true },
       { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: true },
     ],
@@ -51,6 +58,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
     items: [
       { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
       { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
+      { href: "/returns", label: "المرتجعات", icon: Undo2, ready: true },
       { href: "/promotions", label: "العروض", icon: TicketPercent, ready: true },
       { href: "/users", label: "المستخدمون", icon: Users, ready: true },
       // Subscription payments from before the commission model; kept for the record.

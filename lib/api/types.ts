@@ -125,6 +125,8 @@ export interface AdminBrand {
   approvedAt?: string;
   createdAt: string;
   isVisible?: boolean;
+  /** Buyer-protection cases decided against the store; 3 suspend it. Missing on older stores (= 0). */
+  protectionStrikes?: number;
 }
 
 export interface AdminSubscription {
@@ -454,6 +456,128 @@ export interface ProductCard {
   sale: { percent: number; endsAt: string; campaignId: string | null } | null;
   imageUrl: string | null;
   brand: { id?: string; name: string; slug?: string };
+}
+
+// ---------- Support ----------
+
+export type TicketType = "NOT_RECEIVED" | "NOT_AS_DESCRIBED" | "ORDER_PROBLEM" | "PAYMENT" | "ACCOUNT" | "OTHER";
+/** WAITING_STORE, OPEN and ESCALATED are the active ones; replies and decisions only work on those. */
+export type TicketStatus = "WAITING_STORE" | "OPEN" | "ESCALATED" | "RESOLVED" | "CLOSED";
+export type TicketOutcome = "CUSTOMER" | "STORE" | "NEUTRAL";
+
+export interface TicketMessage {
+  id: string;
+  author: "CUSTOMER" | "BRAND" | "ADMIN";
+  text: string;
+  /** Public image URLs. */
+  images: string[];
+  at: string;
+}
+
+/** GET /admin/tickets (list, no messages). Sorted escalated first. */
+export interface Ticket {
+  id: string;
+  /** e.g. T-261021-123456. */
+  number: string;
+  userName: string;
+  type: TicketType;
+  subject: string;
+  orderId: string | null;
+  orderNumber: string | null;
+  brandId: string | null;
+  brandName: string | null;
+  /** Buyer-protection case ("didn't arrive" / "not as described"): the store has 48 hours to answer. */
+  protection: boolean;
+  /** When the store's reply window ends (protection cases only). */
+  storeDeadline: string | null;
+  status: TicketStatus;
+  escalatedAt: string | null;
+  resolution: { outcome: TicketOutcome; note: string; at: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** GET /admin/tickets/:id (also returned by reply and resolve). */
+export interface TicketDetail extends Ticket {
+  messages: TicketMessage[];
+}
+
+/** GET /admin/tickets/counts — active tickets only. */
+export type TicketCounts = Record<"WAITING_STORE" | "OPEN" | "ESCALATED", number>;
+
+// ---------- Returns ----------
+
+export type ReturnReason = "WRONG_SIZE" | "DAMAGED" | "NOT_AS_DESCRIBED" | "WRONG_ITEM" | "CHANGED_MIND" | "OTHER";
+export type ReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "REFUNDED" | "CANCELLED";
+
+/** GET /admin/returns — a customer sending items back from a delivered order. */
+export interface ReturnRequest {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  brandId: string;
+  customerName: string;
+  items: {
+    productId: string;
+    variantId: string;
+    title: string;
+    imageUrl?: string;
+    size?: string;
+    color?: string;
+    unitPrice: number;
+    quantity: number;
+  }[];
+  reason: ReturnReason;
+  note?: string;
+  /** Public image URLs. */
+  images: string[];
+  /** EGP: the items' value minus their share of the order's discount. */
+  refundAmount: number;
+  status: ReturnStatus;
+  history: { status: ReturnStatus; at: string; actor: "CUSTOMER" | "BRAND" | "ADMIN"; note?: string | null }[];
+  /** EGP of commission given back to the store once refunded (0 before that). */
+  commissionReversed: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------- Ads ----------
+
+export type AdPlacement = "SEARCH_TOP" | "CATEGORY_TOP" | "HOME_BANNER";
+/** EXPIRED isn't stored: the API reports an ACTIVE ad past its end that way. */
+export type AdStatus = "PENDING_REVIEW" | "ACTIVE" | "REJECTED" | "EXPIRED";
+
+/** GET /admin/ads — a store paying (InstaPay) to put a product in a sponsored slot for 1–4 weeks. */
+export interface Ad {
+  id: string;
+  brandId: string;
+  brandName: string;
+  productId: string;
+  productTitle: string;
+  placement: AdPlacement;
+  placementName: string;
+  weeks: number;
+  /** EGP: week price × weeks, fixed when bought. */
+  price: number;
+  transactionReference: string;
+  status: AdStatus;
+  /** Set on approval; the ad runs from approval for the weeks paid. */
+  startsAt: string | null;
+  endsAt: string | null;
+  rejectReason: string | null;
+  impressions: number;
+  clicks: number;
+  createdAt: string;
+}
+
+/** GET /ads/prices (public). */
+export interface AdPrice {
+  placement: AdPlacement;
+  name: string;
+  /** EGP per week. */
+  weekPrice: number;
+  /** Sponsored products shown at once in this placement. */
+  slots: number;
 }
 
 // ---------- Analytics ----------

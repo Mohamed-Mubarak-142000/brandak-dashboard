@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api/client";
 import type { AdminBrand, AdminSubscription, AuditEntry, PaymentListItem } from "@/lib/api/types";
+import { cn } from "@/lib/cn";
 import { GOVERNORATE_NAMES } from "@/lib/governorates";
 import { BILLING_LABEL, formatDate, formatDateTime, formatMoney, formatPhone } from "@/lib/format";
 import { DetailList, DetailRow, Muted, Panel } from "@/components/data/detail-list";
@@ -15,6 +16,7 @@ import { Badge, BRAND_STATUS, PAYMENT_STATUS, STORE_TYPE, SUBSCRIPTION_STATUS } 
 import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import { ActivityList } from "@/components/audit/activity-list";
+import { MAX_STRIKES } from "@/components/support/ticket-labels";
 import { CommissionPanel } from "@/components/commissions/commission-status";
 import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { ACTION_LABEL, BRAND_ACTIONS, useBrandActions } from "./brand-actions";
@@ -167,6 +169,9 @@ export function BrandDetail() {
                   <Muted>لا توجد تقييمات بعد</Muted>
                 )}
               </DetailRow>
+              <DetailRow label="مخالفات حماية المشتري">
+                <ProtectionStrikes strikes={b.protectionStrikes ?? 0} />
+              </DetailRow>
             </DetailList>
           </Panel>
 
@@ -269,6 +274,18 @@ export function BrandDetail() {
       {actions.dialog}
       {del.dialog}
     </PageShell>
+  );
+}
+
+/** «1/3»: buyer-protection cases decided for the customer. The third suspends the store automatically. */
+function ProtectionStrikes({ strikes }: { strikes: number }) {
+  return (
+    <>
+      <span className={cn("num font-semibold", strikes >= MAX_STRIKES ? "text-danger" : strikes > 0 ? "text-warning" : "text-ink")}>
+        {strikes}/{MAX_STRIKES}
+      </span>
+      <Muted>{strikes >= MAX_STRIKES ? "اتوقف تلقائيًا بعد آخر حكم ضده" : strikes > 0 ? "الحكم الثالث ضده بيوقفه تلقائيًا" : "مفيش شكاوى اتحكمت ضده"}</Muted>
+    </>
   );
 }
 

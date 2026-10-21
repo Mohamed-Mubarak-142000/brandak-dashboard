@@ -117,4 +117,5 @@ export const api = {
   },
   post: async <T>(path: string, body: unknown = {}) => (await request<T>(path, { method: "POST", body })).data,
   patch: async <T>(path: string, body: unknown) => (await request<T>(path, { method: "PATCH", body })).data,
+  put: async <T>(path: string, body: unknown) => (await request<T>(path, { method: "PUT", body })).data,
 };

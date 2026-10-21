@@ -54,6 +54,18 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   COUPON_CREATED: "أنشأ كوبون فاترينة",
   CAMPAIGN_CREATED: "أنشأ موسم عروض",
   CAMPAIGN_UPDATED: "عدّل موسم عروض",
+  TICKET_RESOLVED_CUSTOMER: "حكم في شكوى لصالح العميل",
+  TICKET_RESOLVED_STORE: "حكم في شكوى لصالح المتجر",
+  TICKET_RESOLVED_NEUTRAL: "قفل شكوى اتحلت ودياً",
+  BRAND_SUSPENDED_STRIKES: "اتوقف المتجر بعد 3 مخالفات حماية المشتري",
+  RETURN_APPROVED: "وافق على مرتجع",
+  RETURN_REJECTED: "رفض مرتجع",
+  RETURN_RECEIVED: "أكّد استلام مرتجع",
+  RETURN_REFUNDED: "أكّد رجوع فلوس مرتجع",
+  AD_PROOF_VIEWED: "اطّلع على إيصال إعلان",
+  AD_APPROVED: "وافق على إعلان",
+  AD_REJECTED: "رفض إعلان",
+  AD_PRICES_UPDATED: "عدّل أسعار الإعلانات",
 };
 
 export const ENTITY_LABEL: Record<string, string> = {
@@ -70,6 +82,9 @@ export const ENTITY_LABEL: Record<string, string> = {
   PlatformSettings: "إعدادات المنصة",
   Coupon: "كوبون",
   Campaign: "موسم عروض",
+  SupportTicket: "تذكرة دعم",
+  ReturnRequest: "مرتجع",
+  Ad: "إعلان",
 };
 
 export function actorName(entry: AuditEntry) {

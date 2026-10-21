@@ -81,3 +81,29 @@ export const USER_STATUS: Record<string, { label: string; tone: Tone }> = {
   ACTIVE: { label: "نشط", tone: "success" },
   SUSPENDED: { label: "موقوف", tone: "danger" },
 };
+
+/** Support tickets. ESCALATED is the one waiting for an admin's decision. */
+export const TICKET_STATUS: Record<string, { label: string; tone: Tone }> = {
+  WAITING_STORE: { label: "مستنية رد المتجر", tone: "neutral" },
+  OPEN: { label: "مفتوحة", tone: "accent" },
+  ESCALATED: { label: "محتاجة حكم", tone: "danger" },
+  RESOLVED: { label: "اتحلت", tone: "success" },
+  CLOSED: { label: "مقفولة", tone: "neutral" },
+};
+
+export const RETURN_STATUS: Record<string, { label: string; tone: Tone }> = {
+  REQUESTED: { label: "مستني رد المتجر", tone: "warning" },
+  APPROVED: { label: "اتوافق عليه", tone: "accent" },
+  REJECTED: { label: "اترفض", tone: "danger" },
+  RECEIVED: { label: "المتجر استلم", tone: "accent" },
+  REFUNDED: { label: "الفلوس رجعت", tone: "success" },
+  CANCELLED: { label: "اتلغى", tone: "neutral" },
+};
+
+/** Paid placements. */
+export const AD_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING_REVIEW: { label: "قيد المراجعة", tone: "warning" },
+  ACTIVE: { label: "شغال", tone: "success" },
+  REJECTED: { label: "مرفوض", tone: "danger" },
+  EXPIRED: { label: "انتهى", tone: "neutral" },
+};

@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./client";
+import type { TicketCounts } from "./types";
 
 export const qk = {
   payments: (status: string) => ["payments", status] as const,
@@ -23,6 +24,17 @@ export const qk = {
   coupons: ["promotions", "coupons"] as const,
   campaigns: ["promotions", "campaigns"] as const,
   campaignProducts: (campaignId: string, limit: number) => ["promotions", "campaigns", campaignId, "products", limit] as const,
+  // Support: everything under ["tickets"].
+  tickets: (status: string, page: number) => ["tickets", "list", status, page] as const,
+  ticketCounts: ["tickets", "counts"] as const,
+  ticket: (id: string) => ["tickets", "detail", id] as const,
+  returns: (status: string, page: number) => ["returns", "list", status, page] as const,
+  returnCounts: ["returns", "counts"] as const,
+  // Ads: everything under ["ads"].
+  ads: (status: string, page: number) => ["ads", "list", status, page] as const,
+  adCounts: ["ads", "counts"] as const,
+  adPrices: ["ads", "prices"] as const,
+  adProof: (id: string) => ["ad", id, "proof"] as const,
 };
 
 /** Number of items waiting in each admin queue (shown in the rail). */
@@ -32,13 +44,16 @@ export function useQueueCounts() {
     queryFn: async () => {
       const total = (path: string, status: string) =>
         api.page(path, { status, limit: 1 }).then((p) => p.meta.total);
-      const [payments, brands, reports, settlements] = await Promise.all([
+      const [payments, brands, reports, settlements, tickets, ads] = await Promise.all([
         total("/admin/payments", "PENDING_REVIEW"),
         total("/admin/brands", "PENDING_REVIEW"),
         total("/admin/reports", "OPEN"),
         total("/admin/settlements", "PENDING_REVIEW"),
+        // Only cases waiting for an admin's decision; on the others the store still has time.
+        api.get<TicketCounts>("/admin/tickets/counts").then((c) => c.ESCALATED),
+        total("/admin/ads", "PENDING_REVIEW"),
       ]);
-      return { payments, brands, reports, settlements };
+      return { payments, brands, reports, settlements, tickets, ads };
     },
     refetchInterval: 60_000,
   });

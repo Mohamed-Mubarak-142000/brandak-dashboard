@@ -39,6 +39,9 @@ Every list page uses the same components (`components/data/`): a TanStack Table 
 | `/payments` + `/payments/[id]` | Reviewing InstaPay receipts: a verification checklist, the stamp, and rejection with a reason. |
 | `/brands` + `/brands/[id]` | Approve, reject, suspend and reinstate. The detail page shows shipping, subscriptions, payments and the brand's activity log. |
 | `/orders` + `/orders/[id]` | Search by order number or phone, filter by status and date range, the order timeline, and admin cancellation with a reason. |
+| `/support` + `/support/[id]` | Support tickets and buyer-protection cases: counts by status (escalated first), the conversation with photos, admin replies, and the decision (for the customer on a protection case adds a strike to the store; 3 suspend it). |
+| `/returns` | Every return request with its items, photos and timeline. Admins can overturn a store's rejection or move a stuck return along. |
+| `/ads` | Reviewing paid placements against their InstaPay receipt, CTR of running ads, and the weekly price of each placement. |
 | `/reports` | Close a report after taking action, dismiss it, hide or show a review, take a product down. |
 | `/users` | Search, suspend and reinstate. Suspending signs the user out of every device. |
 | `/audit` | The read-only log of every sensitive action, filterable by element type. |

@@ -35,6 +35,13 @@ export function VerifiedStamp({ date, animate }: { date?: string; animate?: bool
   );
 }
 
+/** Where each kind of receipt gets its short-lived signed link. */
+const PROOF = {
+  payment: { key: qk.proofUrl, path: (id: string) => `/admin/payments/${id}/proof-url` },
+  settlement: { key: qk.settlementProof, path: (id: string) => `/admin/settlements/${id}/proof-url` },
+  ad: { key: qk.adProof, path: (id: string) => `/admin/ads/${id}/proof` },
+};
+
 export function ReceiptViewer({
   paymentId,
   hasProof,
@@ -47,8 +54,8 @@ export function ReceiptViewer({
   hasProof: boolean;
   approvedAt?: string;
   stampAnimating: boolean;
-  /** Subscription payment (legacy) or commission settlement: picks the signed-URL endpoint. */
-  kind?: "payment" | "settlement";
+  /** Subscription payment (legacy), commission settlement or paid placement: picks the signed-URL endpoint. */
+  kind?: keyof typeof PROOF;
 }) {
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState("50% 50%");
@@ -57,9 +64,8 @@ export function ReceiptViewer({
 
   // Signed links expire after 5 minutes; refresh a little before that.
   const proof = useQuery({
-    queryKey: kind === "settlement" ? qk.settlementProof(paymentId) : qk.proofUrl(paymentId),
-    queryFn: () =>
-      api.get<{ url: string }>(kind === "settlement" ? `/admin/settlements/${paymentId}/proof-url` : `/admin/payments/${paymentId}/proof-url`),
+    queryKey: PROOF[kind].key(paymentId),
+    queryFn: () => api.get<{ url: string }>(PROOF[kind].path(paymentId)),
     enabled: hasProof,
     staleTime: 4 * 60_000,
     refetchInterval: 4 * 60_000,
