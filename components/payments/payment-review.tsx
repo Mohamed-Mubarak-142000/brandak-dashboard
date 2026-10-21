@@ -160,7 +160,7 @@ export function PaymentReview({
           className="-ms-2 mb-3 inline-flex h-9 items-center gap-1.5 rounded-sm px-2 text-ui text-ink-2 hover:bg-sunken hover:text-ink"
         >
           <ArrowRight aria-hidden className="size-4" />
-          كل المدفوعات
+          كل مدفوعات الباقات
         </button>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <h2 id="review-title" className="font-display text-page text-ink">

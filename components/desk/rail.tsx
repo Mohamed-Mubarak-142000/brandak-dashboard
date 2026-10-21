@@ -4,6 +4,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import * as RDialog from "@radix-ui/react-dialog";
 import {
   Flag,
+  HandCoins,
   LayoutList,
   LogOut,
   Menu,
@@ -23,7 +24,7 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { useQueueCounts } from "@/lib/api/queries";
 
-type CountKey = "payments" | "brands" | "reports";
+type CountKey = "payments" | "brands" | "reports" | "settlements";
 
 interface NavItem {
   href: string;
@@ -38,7 +39,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
   {
     group: "يحتاج قرارك",
     items: [
-      { href: "/payments", label: "المدفوعات", icon: ReceiptText, count: "payments", ready: true },
+      // The count is commission receipts waiting for review.
+      { href: "/commissions", label: "العمولات", icon: HandCoins, count: "settlements", ready: true },
       { href: "/brands", label: "المتاجر", icon: Store, count: "brands", ready: true },
       { href: "/reports", label: "البلاغات", icon: Flag, count: "reports", ready: true },
     ],
@@ -49,8 +51,10 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
       { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
       { href: "/users", label: "المستخدمون", icon: Users, ready: true },
+      // Subscription payments from before the commission model; kept for the record.
+      { href: "/payments", label: "مدفوعات الباقات", icon: ReceiptText, count: "payments", ready: true },
       { href: "/audit", label: "سجل العمليات", icon: ScrollText, ready: true },
-      { href: "/settings", label: "الباقات والتصنيفات", icon: Settings2, ready: true },
+      { href: "/settings", label: "الإعدادات", icon: Settings2, ready: true },
       { href: "/account", label: "حسابي", icon: UserRound, ready: true },
     ],
   },
@@ -59,8 +63,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
 function Wordmark() {
   return (
     <span className="flex items-center gap-2.5">
-      <Image src="/brand/brandak-mark.png" alt="" width={26} height={33} priority className="h-8 w-auto" />
-      <span className="font-display text-section leading-none text-ink">دكاكين</span>
+      <Image src="/brand/fatrina-mark.png" alt="" width={36} height={36} priority className="h-9 w-auto" />
+      <span className="font-display text-section leading-none text-ink">فاترينة</span>
       <span className="rounded-sm border border-line px-1.5 py-0.5 text-meta text-ink-3">الإدارة</span>
     </span>
   );

@@ -54,12 +54,21 @@ export const SUBSCRIPTION_STATUS: Record<string, { label: string; tone: Tone }> 
 };
 
 export const ORDER_STATUS: Record<string, { label: string; tone: Tone }> = {
+  AWAITING_CONFIRMATION: { label: "مستني تأكيد العميل", tone: "neutral" },
   PENDING: { label: "قيد المراجعة", tone: "warning" },
   CONFIRMED: { label: "تم التأكيد", tone: "accent" },
   PROCESSING: { label: "قيد التجهيز", tone: "accent" },
   SHIPPED: { label: "تم الشحن", tone: "accent" },
   DELIVERED: { label: "تم التسليم", tone: "success" },
   CANCELLED: { label: "ملغي", tone: "neutral" },
+  REFUSED: { label: "رفض الاستلام", tone: "danger" },
+};
+
+/** Commission settlements: a store paying what it owes by InstaPay. */
+export const SETTLEMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING_REVIEW: { label: "قيد المراجعة", tone: "warning" },
+  APPROVED: { label: "معتمد", tone: "success" },
+  REJECTED: { label: "مرفوض", tone: "danger" },
 };
 
 export const REPORT_STATUS: Record<string, { label: string; tone: Tone }> = {

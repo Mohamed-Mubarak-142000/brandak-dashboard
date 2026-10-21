@@ -14,6 +14,7 @@ import { PageHeader, PageShell } from "@/components/data/page-header";
 import { Badge, ORDER_STATUS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
+import { formatRate } from "@/components/commissions/commission-status";
 import { adminCanCancel, useCancelOrder } from "./orders-page";
 
 const ACTOR: Record<string, string> = { CUSTOMER: "العميل", BRAND: "البراند", ADMIN: "الإدارة", SYSTEM: "النظام" };
@@ -23,14 +24,27 @@ const FLOW = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] as c
 function StatusTimeline({ order }: { order: Order }) {
   const at = (s: string) => order.history.find((h) => h.status === s);
   const cancelled = order.status === "CANCELLED";
-  const reached = cancelled ? order.history.filter((h) => h.status !== "CANCELLED").length - 1 : FLOW.indexOf(order.status as (typeof FLOW)[number]);
+  const refused = order.status === "REFUSED";
+  const ended = cancelled || refused;
+  const awaiting = order.status === "AWAITING_CONFIRMATION";
+  // For an order that ended early, the furthest step it reached in its history.
+  const reached = ended
+    ? Math.max(-1, ...order.history.map((h) => FLOW.indexOf(h.status as (typeof FLOW)[number])))
+    : FLOW.indexOf(order.status as (typeof FLOW)[number]);
+  const endEntry = at(order.status);
 
   return (
     <ol className="flex flex-col gap-0">
+      {awaiting && (
+        <li className="mb-4 rounded-sm border border-line bg-sunken px-3 py-2.5 text-ui">
+          <p className="font-semibold text-ink">{ORDER_STATUS.AWAITING_CONFIRMATION.label}</p>
+          <p className="mt-0.5 text-ink-2">العميل لازم يأكد الطلب بالكود اللي وصله على الإيميل. المتجر مش شايف الطلب لحد ما يتأكد، وبيتلغي تلقائيًا لو متأكدش خلال 24 ساعة.</p>
+        </li>
+      )}
       {FLOW.map((s, i) => {
         const entry = at(s);
         const done = i <= reached;
-        const current = i === reached && !cancelled;
+        const current = i === reached && !ended;
         return (
           <li key={s} className="relative flex gap-3 pb-5 last:pb-0">
             {i < FLOW.length - 1 && (
@@ -56,13 +70,15 @@ function StatusTimeline({ order }: { order: Order }) {
           </li>
         );
       })}
-      {cancelled && (
+      {ended && (
         <li className="mt-4 rounded-sm border border-danger/30 bg-danger-soft px-3 py-2.5 text-ui">
-          <p className="font-semibold text-danger">أُلغي الطلب</p>
-          {order.cancelReason && <p className="mt-0.5 text-ink">{order.cancelReason}</p>}
-          {at("CANCELLED") && (
+          <p className="font-semibold text-danger">{refused ? "العميل رفض الاستلام" : "أُلغي الطلب"}</p>
+          {refused && <p className="mt-0.5 text-ink">الشحنة رجعت للمتجر، والكميات رجعت للمخزون. مفيش عمولة على الطلب ده.</p>}
+          {cancelled && order.cancelReason && <p className="mt-0.5 text-ink">{order.cancelReason}</p>}
+          {endEntry && (
             <p className="mt-0.5 text-meta text-ink-2">
-              {formatDateTime(at("CANCELLED")!.at)} — {ACTOR[at("CANCELLED")!.actor]}
+              {formatDateTime(endEntry.at)} — {ACTOR[endEntry.actor]}
+              {refused && endEntry.note && `: ${endEntry.note}`}
             </p>
           )}
         </li>
@@ -165,6 +181,21 @@ export function OrderDetail() {
                 <dd className="num">{formatMoney(o.grandTotal)}</dd>
               </div>
               <p className="mt-1 text-meta text-ink-3">{o.paymentStatus === "PAID" ? "تم التحصيل عند الاستلام" : "الدفع عند الاستلام"}</p>
+              {o.commission && (
+                <div className="mt-3 flex justify-between border-t border-dashed border-line pt-2">
+                  <dt className="text-ink-2">
+                    عمولة فاترينة{" "}
+                    <span className="text-meta text-ink-3">
+                      (<span className="num">{formatRate(o.commission.rate)}</span> من <span className="num">{formatMoney(o.commission.base)}</span>)
+                    </span>
+                  </dt>
+                  <dd>
+                    <Link href={`/commissions/${o.brand.id}`} className="num font-semibold text-accent underline-offset-4 hover:underline">
+                      {formatMoney(o.commission.amount)}
+                    </Link>
+                  </dd>
+                </div>
+              )}
             </dl>
           </Panel>
 

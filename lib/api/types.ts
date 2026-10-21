@@ -141,7 +141,24 @@ export interface AdminSubscription {
 
 // ---------- Orders ----------
 
-export type OrderStatus = "PENDING" | "CONFIRMED" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+export type OrderStatus =
+  /** Placed, but the customer hasn't confirmed it with the email code yet; the store doesn't see it. */
+  | "AWAITING_CONFIRMATION"
+  | "PENDING"
+  | "CONFIRMED"
+  | "PROCESSING"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "CANCELLED"
+  /** The customer refused the parcel at the door. */
+  | "REFUSED";
+
+/** Platform commission charged when an order is delivered (amount = base × rate, in EGP). */
+export interface OrderCommission {
+  rate: number;
+  base: number;
+  amount: number;
+}
 
 export interface OrderSummary {
   id: string;
@@ -193,6 +210,8 @@ export interface OrderDetail extends OrderSummary {
   deliveredAt: string | null;
   history: { status: OrderStatus; at: string; actor: "CUSTOMER" | "BRAND" | "ADMIN" | "SYSTEM"; note: string | null }[];
   allowedNextStatuses: OrderStatus[];
+  /** Set on delivered orders (admin view); null when no commission was charged. */
+  commission?: OrderCommission | null;
 }
 
 // ---------- Moderation ----------
@@ -285,6 +304,81 @@ export interface Category {
   isActive: boolean;
   /** Store types offered this category when opening a store; empty = all types. */
   storeTypes?: StoreType[];
+}
+
+// ---------- Commission ----------
+
+/** GET/PATCH /admin/platform-settings. */
+export interface PlatformSettings {
+  /** Fraction of the order, e.g. 0.05 = 5%. */
+  commissionRate: number;
+  /** Days a store has to pay what it owes before it stops receiving orders. */
+  settlementDays: number;
+  /** EGP; owing more than this stops new orders right away. */
+  maxUnpaidBalance: number;
+}
+
+/** GET /admin/commissions/summary (money in EGP). */
+export interface CommissionSummary {
+  commissionThisMonth: number;
+  ordersThisMonth: number;
+  outstanding: number;
+  storesOwing: number;
+  storesBlocked: number;
+  pendingSettlements: number;
+}
+
+/** GET /admin/commissions/brands — one row per store with a ledger, owing/blocked first. */
+export interface BrandCommissionRow {
+  brandId: string;
+  name: string;
+  slug: string;
+  balance: number;
+  totalCommission: number;
+  dueSince: string | null;
+  blocked: boolean;
+}
+
+/** GET /admin/commissions/brands/:brandId (also returned by /adjust). */
+export interface BrandCommissionStatus extends PlatformSettings {
+  /** Positive = the store owes the platform. */
+  balance: number;
+  dueSince: string | null;
+  dueBy: string | null;
+  blocked: boolean;
+  pendingSettlement: { id: string; amount: number; createdAt: string } | null;
+}
+
+export type LedgerType = "COMMISSION" | "REVERSAL" | "PAYMENT" | "ADJUSTMENT";
+
+export interface LedgerEntry {
+  _id: string;
+  brandId: string;
+  type: LedgerType;
+  /** + = the store owes more, − = paid / credit. */
+  amount: number;
+  orderId?: string;
+  orderNumber?: string;
+  rate?: number;
+  base?: number;
+  note?: string;
+  createdAt: string;
+}
+
+export type SettlementStatus = "PENDING_REVIEW" | "APPROVED" | "REJECTED";
+
+/** GET /admin/settlements — a store paying what it owes, with an InstaPay receipt. */
+export interface Settlement {
+  id: string;
+  _id: string;
+  brandId: string;
+  brandName: string;
+  amount: number;
+  transactionReference: string;
+  status: SettlementStatus;
+  createdAt: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
 }
 
 // ---------- Analytics ----------

@@ -3,7 +3,7 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import { useQuery } from "@tanstack/react-query";
 import { createColumnHelper } from "@tanstack/react-table";
-import { EyeOff, Eye, Pencil, Plus } from "lucide-react";
+import { Archive, EyeOff, Eye, Pencil, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useAction } from "@/lib/api/use-action";
@@ -18,6 +18,7 @@ import { Badge, STORE_TYPE } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { CategoryFormDialog } from "./category-form";
+import { CommissionSettings } from "./commission-settings";
 import { PlanFormDialog } from "./plan-form";
 
 const planHelper = createColumnHelper<TableFeatures, Plan>();
@@ -121,12 +122,19 @@ function PlansTab() {
 
   return (
     <>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <DeletedToggle value={showDeleted} onChange={setShowDeleted} deletedCount={allPlans.filter((p) => p.deletedAt).length} />
-          <p className="text-ui text-ink-2">الباقات اللي بيختار منها أصحاب المتاجر. تغيير السعر مش بيأثر على الاشتراكات الحالية.</p>
+      <div className="mb-4 flex items-start gap-3 rounded-sm border border-line bg-sunken px-4 py-3 text-ui">
+        <Archive aria-hidden className="mt-0.5 size-4 shrink-0 text-ink-3" />
+        <div>
+          <p className="font-semibold text-ink">الباقات اتلغت — القائمة دي للسجل بس</p>
+          <p className="mt-0.5 text-ink-2">
+            فاترينة دلوقتي بتاخد عمولة على كل طلب بيتسلّم بدل الاشتراكات. الباقات فاضلة هنا عشان مدفوعات واشتراكات المتاجر القديمة تفضل مفهومة؛
+            شروط العمولة في تبويب «العمولة».
+          </p>
         </div>
-        <Button variant="primary" onClick={() => open(null)}>
+      </div>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <DeletedToggle value={showDeleted} onChange={setShowDeleted} deletedCount={allPlans.filter((p) => p.deletedAt).length} />
+        <Button onClick={() => open(null)}>
           <Plus aria-hidden className="size-4" />
           باقة جديدة
         </Button>
@@ -140,7 +148,7 @@ function PlansTab() {
         isPending={plans.isPending}
         error={plans.error}
         onRetry={() => plans.refetch()}
-        empty={showDeleted ? { title: "مفيش باقات محذوفة" } : { title: "لا توجد باقات", description: "أضف أول باقة ليستطيع أصحاب المتاجر الاشتراك." }}
+        empty={showDeleted ? { title: "مفيش باقات محذوفة" } : { title: "لا توجد باقات", description: "مفيش باقات قديمة متسجلة." }}
         mobileItem={(p) => <MobileRow title={p.nameAr} trailing={isFreePlan(p) ? <FreeBadge /> : <span className="num">{formatMoney(p.priceMonthly)}</span>} meta={planLimitsText(p)} badge={<ActiveBadge active={p.isActive} />} actions={menu(p)} />}
       />
       <PlanFormDialog plan={editing} open={formOpen} onOpenChange={setFormOpen} />
@@ -252,21 +260,28 @@ function CategoriesTab() {
 
 export function SettingsPage() {
   const url = useUrlState();
-  const tab = url.get("tab") === "categories" ? "categories" : "plans";
+  const param = url.get("tab");
+  const tab = param === "categories" || param === "plans" ? param : "commission";
   const trigger =
     "relative h-11 px-1 text-ui text-ink-2 transition-colors hover:text-ink data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-0.5 data-[state=active]:after:bg-brand";
   return (
     <PageShell>
-      <PageHeader title="الباقات والتصنيفات" />
-      <Tabs.Root value={tab} onValueChange={(v) => url.set({ tab: v === "plans" ? null : v })} dir="rtl" className="mt-6">
-        <Tabs.List aria-label="الإعدادات" className="mb-6 flex gap-6 border-b border-line">
-          <Tabs.Trigger value="plans" className={trigger}>
-            باقات الاشتراك
+      <PageHeader title="الإعدادات" description="شروط العمولة وتصنيفات المتاجر." />
+      <Tabs.Root value={tab} onValueChange={(v) => url.set({ tab: v === "commission" ? null : v })} dir="rtl" className="mt-6">
+        <Tabs.List aria-label="الإعدادات" className="mb-6 flex gap-6 overflow-x-auto border-b border-line">
+          <Tabs.Trigger value="commission" className={trigger}>
+            العمولة
           </Tabs.Trigger>
           <Tabs.Trigger value="categories" className={trigger}>
             التصنيفات
           </Tabs.Trigger>
+          <Tabs.Trigger value="plans" className={cn(trigger, "ms-auto whitespace-nowrap text-ink-3")}>
+            الباقات القديمة (للسجل فقط)
+          </Tabs.Trigger>
         </Tabs.List>
+        <Tabs.Content value="commission">
+          <CommissionSettings />
+        </Tabs.Content>
         <Tabs.Content value="plans">
           <PlansTab />
         </Tabs.Content>

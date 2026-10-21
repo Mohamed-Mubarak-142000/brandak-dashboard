@@ -45,6 +45,12 @@ export const AUDIT_ACTIONS: Record<string, string> = {
   PRODUCT_TAKEN_DOWN: "أزال منتجًا",
   USER_ACTIVE: "أعاد تفعيل مستخدم",
   USER_SUSPENDED: "أوقف مستخدمًا",
+  COMMISSION_TERMS_UPDATED: "عدّل شروط العمولة",
+  COMMISSION_ADJUSTED: "سجّل تسوية عمولة يدوية",
+  SETTLEMENT_PROOF_VIEWED: "اطّلع على إيصال سداد عمولة",
+  SETTLEMENT_APPROVED: "اعتمد سداد عمولة",
+  SETTLEMENT_REJECTED: "رفض إيصال سداد عمولة",
+  SUBSCRIPTION_FREE_ACTIVATED: "فعّل باقة مجانية",
 };
 
 export const ENTITY_LABEL: Record<string, string> = {
@@ -57,6 +63,8 @@ export const ENTITY_LABEL: Record<string, string> = {
   Review: "تقييم",
   Product: "منتج",
   User: "مستخدم",
+  Settlement: "سداد عمولة",
+  PlatformSettings: "إعدادات المنصة",
 };
 
 export function actorName(entry: AuditEntry) {

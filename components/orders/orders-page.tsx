@@ -28,12 +28,14 @@ const EMPTY: OrderSummary[] = [];
 
 const STATUS_OPTIONS = [
   { value: "ALL", label: "الكل" },
+  { value: "AWAITING_CONFIRMATION", label: "مستني تأكيد العميل", hint: "العميل لسه مأكدش بكود الإيميل؛ المتجر مش شايفه" },
   { value: "PENDING", label: "قيد المراجعة", hint: "لم يؤكدها البراند بعد" },
   { value: "CONFIRMED", label: "تم التأكيد" },
   { value: "PROCESSING", label: "قيد التجهيز" },
   { value: "SHIPPED", label: "تم الشحن" },
   { value: "DELIVERED", label: "تم التسليم" },
   { value: "CANCELLED", label: "ملغاة" },
+  { value: "REFUSED", label: "رفض الاستلام", hint: "العميل رفض الشحنة عند الباب" },
 ];
 const RANGE_OPTIONS = [
   { value: "ALL", label: "كل الأوقات" },
@@ -43,7 +45,7 @@ const RANGE_OPTIONS = [
 ];
 
 /** Admins may only cancel open orders (after a complaint); fulfilment belongs to the brand. */
-export const adminCanCancel = (status: string) => ["PENDING", "CONFIRMED", "PROCESSING"].includes(status);
+export const adminCanCancel = (status: string) => ["AWAITING_CONFIRMATION", "PENDING", "CONFIRMED", "PROCESSING"].includes(status);
 
 export const CANCEL_REASONS = ["شكوى من العميل", "البراند لا يرد", "طلب مكرر أو وهمي", "منتج مخالف"];
 
@@ -134,7 +136,7 @@ export function OrdersPage() {
         { label: "نسخ رقم الطلب", icon: Copy, onSelect: () => copy(o) },
         { label: "إلغاء الطلب", icon: XCircle, danger: true, separated: true, hidden: showingDeleted || !adminCanCancel(o.status), onSelect: () => cancel.ask(o) },
         // Only finished orders can be deleted (the API refuses the rest).
-        ...(showingDeleted || o.status === "DELIVERED" || o.status === "CANCELLED" ? del.menuItems({ id: o.id, name: o.orderNumber }, showingDeleted) : []),
+        ...(showingDeleted || o.status === "DELIVERED" || o.status === "CANCELLED" || o.status === "REFUSED" ? del.menuItems({ id: o.id, name: o.orderNumber }, showingDeleted) : []),
       ]}
     />
   );

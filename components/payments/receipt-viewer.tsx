@@ -40,11 +40,15 @@ export function ReceiptViewer({
   hasProof,
   approvedAt,
   stampAnimating,
+  kind = "payment",
 }: {
+  /** The payment's id, or the settlement's when `kind` is "settlement". */
   paymentId: string;
   hasProof: boolean;
   approvedAt?: string;
   stampAnimating: boolean;
+  /** Subscription payment (legacy) or commission settlement: picks the signed-URL endpoint. */
+  kind?: "payment" | "settlement";
 }) {
   const [zoomed, setZoomed] = useState(false);
   const [origin, setOrigin] = useState("50% 50%");
@@ -53,8 +57,9 @@ export function ReceiptViewer({
 
   // Signed links expire after 5 minutes; refresh a little before that.
   const proof = useQuery({
-    queryKey: qk.proofUrl(paymentId),
-    queryFn: () => api.get<{ url: string }>(`/admin/payments/${paymentId}/proof-url`),
+    queryKey: kind === "settlement" ? qk.settlementProof(paymentId) : qk.proofUrl(paymentId),
+    queryFn: () =>
+      api.get<{ url: string }>(kind === "settlement" ? `/admin/settlements/${paymentId}/proof-url` : `/admin/payments/${paymentId}/proof-url`),
     enabled: hasProof,
     staleTime: 4 * 60_000,
     refetchInterval: 4 * 60_000,

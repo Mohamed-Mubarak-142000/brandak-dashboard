@@ -13,6 +13,7 @@ export function Dialog({
   footer,
   className,
   initialFocus,
+  size = "md",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -23,6 +24,8 @@ export function Dialog({
   className?: string;
   /** Element to focus on open (defaults to the first focusable, which is the close button). */
   initialFocus?: React.RefObject<HTMLElement | null>;
+  /** "lg" fits side-by-side content, e.g. a receipt next to the facts to compare. */
+  size?: "md" | "lg";
 }) {
   return (
     <RDialog.Root open={open} onOpenChange={onOpenChange}>
@@ -38,7 +41,8 @@ export function Dialog({
           }}
           className={cn(
             "fixed inset-x-0 bottom-0 z-50 max-h-[90dvh] overflow-y-auto rounded-t-md border border-line bg-surface p-6 shadow-pop",
-            "sm:inset-x-auto sm:bottom-auto sm:start-1/2 sm:top-1/2 sm:w-[min(520px,calc(100vw-2rem))] sm:-translate-y-1/2 sm:rounded-md",
+            "sm:inset-x-auto sm:bottom-auto sm:start-1/2 sm:top-1/2 sm:-translate-y-1/2 sm:rounded-md",
+            size === "lg" ? "sm:w-[min(960px,calc(100vw-2rem))]" : "sm:w-[min(520px,calc(100vw-2rem))]",
             "sm:translate-x-1/2", // RTL: start is the right edge, so shift back by half toward it
             "pb-[max(1.5rem,env(safe-area-inset-bottom))]",
             className,

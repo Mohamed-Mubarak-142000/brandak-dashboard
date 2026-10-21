@@ -1,17 +1,20 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Flag, ReceiptText, Store } from "lucide-react";
+import { ArrowLeft, Flag, HandCoins, Store } from "lucide-react";
 import Link from "next/link";
 import { useMemo } from "react";
 import { api } from "@/lib/api/client";
-import type { AdminOverview, Plan } from "@/lib/api/types";
+import { qk } from "@/lib/api/queries";
+import type { AdminOverview, BrandCommissionRow, CommissionSummary } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatDate, formatMoney, formatNumber } from "@/lib/format";
 import { useUrlState } from "@/lib/use-url-state";
 import { Panel } from "@/components/data/detail-list";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { ErrorState, Skeleton } from "@/components/ui/states";
+
+const NO_OWING: BrandCommissionRow[] = [];
 
 const RANGES = [
   { value: "7", label: "7 أيام" },
@@ -52,30 +55,26 @@ function Figure({ label, value, note, lead }: { label: string; value: React.Reac
   );
 }
 
-/** Active subscriptions per plan — a single series, so one hue and values written beside the bars. */
-function PlanBars({ byPlan, plans }: { byPlan: Record<string, number>; plans: Plan[] }) {
-  const rows = useMemo(() => {
-    const names = new Map(plans.map((p) => [p.code, { name: p.nameAr, order: p.sortOrder }]));
-    return Object.entries(byPlan)
-      .map(([code, count]) => ({ code, count, name: names.get(code)?.name ?? code, order: names.get(code)?.order ?? 99 }))
-      .sort((a, b) => a.order - b.order);
-  }, [byPlan, plans]);
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  const total = rows.reduce((s, r) => s + r.count, 0);
+/** Stores that owe the most — a single series, so one hue and values written beside the bars. */
+function OwingBars({ rows }: { rows: BrandCommissionRow[] }) {
+  const top = useMemo(() => rows.filter((r) => r.balance > 0).sort((a, b) => b.balance - a.balance).slice(0, 6), [rows]);
+  const max = Math.max(1, ...top.map((r) => r.balance));
 
-  if (!rows.length) return <p className="text-ui text-ink-3">لا توجد اشتراكات فعّالة حتى الآن.</p>;
+  if (!top.length) return <p className="text-ui text-ink-3">مفيش متاجر عليها مستحقات دلوقتي.</p>;
   return (
-    <ul className="flex flex-col gap-3" aria-label="الاشتراكات الفعّالة حسب الباقة">
-      {rows.map((r) => (
-        <li key={r.code} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3" title={`${r.name}: ${r.count} من ${total}`}>
-          <span className="truncate text-ui text-ink-2">{r.name}</span>
-          <span className="h-2.5 rounded-e-[4px] bg-sunken" aria-hidden>
-            <span className="block h-full rounded-e-[4px] bg-brand" style={{ width: `${(r.count / max) * 100}%` }} />
-          </span>
-          <span className="num min-w-8 text-end text-ui font-semibold text-ink">
-            {r.count}
-            <span className="sr-only"> اشتراك فعّال في باقة {r.name}</span>
-          </span>
+    <ul className="flex flex-col gap-3" aria-label="أكثر المتاجر مستحقات">
+      {top.map((r) => (
+        <li key={r.brandId}>
+          <Link href={`/commissions/${r.brandId}`} className="grid grid-cols-[6.5rem_1fr_auto] items-center gap-3 hover:text-accent">
+            <span className={cn("truncate text-ui", r.blocked ? "text-danger" : "text-ink-2")}>{r.name || "متجر"}</span>
+            <span className="h-2.5 rounded-e-[4px] bg-sunken" aria-hidden>
+              <span className="block h-full rounded-e-[4px] bg-brand" style={{ width: `${(r.balance / max) * 100}%` }} />
+            </span>
+            <span className="num min-w-16 text-end text-ui font-semibold text-ink">
+              {formatMoney(r.balance)}
+              {r.blocked && <span className="sr-only"> — متوقف عن الطلبات</span>}
+            </span>
+          </Link>
         </li>
       ))}
     </ul>
@@ -104,7 +103,12 @@ export function OverviewPage() {
     queryFn: () => api.get<AdminOverview>("/admin/analytics/overview", { from }),
     refetchInterval: 60_000,
   });
-  const plans = useQuery({ queryKey: ["plans"], queryFn: () => api.get<Plan[]>("/admin/plans") });
+  const commission = useQuery({
+    queryKey: qk.commissionSummary,
+    queryFn: () => api.get<CommissionSummary>("/admin/commissions/summary"),
+    refetchInterval: 60_000,
+  });
+  const owing = useQuery({ queryKey: qk.commissionBrands, queryFn: () => api.get<BrandCommissionRow[]>("/admin/commissions/brands") });
 
   const rangeSwitch = (
     <div role="radiogroup" aria-label="الفترة" className="inline-flex rounded-sm border border-line-strong bg-surface p-0.5">
@@ -146,14 +150,15 @@ export function OverviewPage() {
       ) : overview.isError || !overview.data ? (
         <ErrorState error={overview.error} onRetry={() => overview.refetch()} />
       ) : (
-        <Body data={overview.data} plans={plans.data ?? []} />
+        <Body data={overview.data} commission={commission.data} owing={owing.data ?? NO_OWING} />
       )}
     </PageShell>
   );
 }
 
-function Body({ data, plans }: { data: AdminOverview; plans: Plan[] }) {
+function Body({ data, commission, owing }: { data: AdminOverview; commission?: CommissionSummary; owing: BrandCommissionRow[] }) {
   const q = data.queues;
+  const money = (n?: number) => (n === undefined ? "—" : formatMoney(n));
   return (
     <>
       <section aria-labelledby="queues" className="mt-8">
@@ -161,7 +166,13 @@ function Body({ data, plans }: { data: AdminOverview; plans: Plan[] }) {
           ينتظر قرارك
         </h2>
         <div className="grid gap-3 md:grid-cols-3">
-          <Queue count={q.pendingPayments} label="إيصالات دفع" hint="طابقها مع InstaPay لتفعيل الاشتراكات" href="/payments" icon={ReceiptText} />
+          <Queue
+            count={commission?.pendingSettlements ?? 0}
+            label="إيصالات سداد العمولة"
+            hint="طابقها مع InstaPay قبل خصمها من المستحق"
+            href="/commissions?tab=settlements"
+            icon={HandCoins}
+          />
           <Queue count={q.pendingBrandApplications} label="طلبات براندات جديدة" hint="راجع البيانات قبل ظهور المتجر" href="/brands?status=PENDING_REVIEW" icon={Store} />
           <Queue count={q.openReports} label="بلاغات مفتوحة" hint="محتوى أبلغ عنه العملاء" href="/reports" icon={Flag} />
         </div>
@@ -173,20 +184,34 @@ function Body({ data, plans }: { data: AdminOverview; plans: Plan[] }) {
         </h2>
         <Panel className="py-1 sm:py-1">
           <dl className="grid grid-cols-2 gap-x-4 sm:grid-cols-5 sm:gap-x-0">
-            <Figure lead label="الإيراد الشهري المتكرر" value={formatMoney(data.subscriptions.mrr)} note="من الاشتراكات الفعّالة الآن" />
-            <Figure label="محصّل في الفترة" value={formatMoney(data.subscriptions.collectedInRange)} note={`${formatNumber(data.subscriptions.approvedPaymentsInRange)} دفعة معتمدة`} />
-            <Figure label="اشتراكات فعّالة" value={formatNumber(data.subscriptions.active)} note={`${formatNumber(data.subscriptions.renewalsInRange)} تجديد في الفترة`} />
-            <Figure label="براندات ظاهرة للعملاء" value={formatNumber(data.brands.visible)} note={data.brands.expiringIn7Days ? `${data.brands.expiringIn7Days} ينتهي اشتراكها خلال 7 أيام` : "لا اشتراكات تنتهي قريبًا"} />
-            <Figure label="قيمة الطلبات" value={formatMoney(data.orders.gmv)} note={`${formatNumber(data.orders.count)} طلب — ليست إيرادًا للمنصة`} />
+            <Figure
+              lead
+              label="عمولة الشهر"
+              value={money(commission?.commissionThisMonth)}
+              note={commission ? `من ${formatNumber(commission.ordersThisMonth)} طلب اتسلّم` : undefined}
+            />
+            <Figure label="المستحق على المتاجر" value={money(commission?.outstanding)} note={commission ? `على ${formatNumber(commission.storesOwing)} متجر` : undefined} />
+            <Figure
+              label="متاجر متوقفة"
+              value={commission ? formatNumber(commission.storesBlocked) : "—"}
+              note="مش بتستقبل طلبات لحد ما تسدد"
+            />
+            <Figure label="براندات ظاهرة للعملاء" value={formatNumber(data.brands.visible)} />
+            <Figure label="قيمة الطلبات" value={formatMoney(data.orders.gmv)} note={`${formatNumber(data.orders.count)} طلب في الفترة — ليست إيرادًا للمنصة`} />
           </dl>
         </Panel>
       </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Panel>
-          <h2 className="text-ui font-semibold text-ink">الاشتراكات الفعّالة حسب الباقة</h2>
-          <p className="mb-4 mt-0.5 text-meta text-ink-3">عدد البراندات المشتركة الآن في كل باقة</p>
-          <PlanBars byPlan={data.subscriptions.byPlan} plans={plans} />
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-ui font-semibold text-ink">أكثر المتاجر مستحقات</h2>
+            <Link href="/commissions" className="text-meta text-accent underline-offset-4 hover:underline">
+              كل العمولات
+            </Link>
+          </div>
+          <p className="mb-4 mt-0.5 text-meta text-ink-3">العمولة اللي لسه متدفعتش؛ الأحمر متوقف عن استقبال الطلبات</p>
+          <OwingBars rows={owing} />
         </Panel>
         <Panel>
           <h2 className="text-ui font-semibold text-ink">البراندات</h2>

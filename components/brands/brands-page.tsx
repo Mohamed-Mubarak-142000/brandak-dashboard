@@ -37,10 +37,9 @@ const TYPE_OPTIONS = [
 
 const ownerOf = (b: AdminBrand) => (typeof b.ownerUserId === "object" ? b.ownerUserId : null);
 
-/** Visible to customers = approved and paid up. */
+/** Visible to customers = approved (a store that owes overdue commission still shows, but pauses orders). */
 function Visibility({ brand }: { brand: AdminBrand }) {
-  if (brand.isVisible) return <span className="text-success">ظاهر حتى {formatDate(brand.subscriptionEndsAt)}</span>;
-  if (brand.status === "ACTIVE") return <span className="text-warning">مخفي: لا يوجد اشتراك فعّال</span>;
+  if (brand.isVisible) return <span className="text-success">ظاهر</span>;
   return <span className="text-ink-3">مخفي</span>;
 }
 

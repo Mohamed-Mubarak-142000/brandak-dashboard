@@ -21,7 +21,7 @@ const EMPTY: AuditEntry[] = [];
 
 const ENTITY_OPTIONS = [
   { value: "ALL", label: "كل العناصر" },
-  ...["Brand", "Payment", "Order", "Report", "Review", "Product", "User", "SubscriptionPlan"].map((v) => ({ value: v, label: ENTITY_LABEL[v] })),
+  ...["Brand", "Settlement", "Payment", "Order", "Report", "Review", "Product", "User", "PlatformSettings", "SubscriptionPlan"].map((v) => ({ value: v, label: ENTITY_LABEL[v] })),
 ];
 
 /** Pages that exist for an entity, so the log can link straight to it. */

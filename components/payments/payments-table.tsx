@@ -342,8 +342,14 @@ export function PaymentsTable() {
   return (
     <div className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-8 sm:py-8">
       <header className="flex flex-col gap-1">
-        <h1 className="font-display text-page text-ink">المدفوعات</h1>
-        <p className="text-ui text-ink-2">طابق كل إيصال مع حساب InstaPay قبل تفعيل الاشتراك.</p>
+        <h1 className="font-display text-page text-ink">مدفوعات الباقات</h1>
+        <p className="text-ui text-ink-2">
+          مدفوعات اشتراكات الباقات القديمة، للسجل. سداد العمولات بيتراجع من{" "}
+          <Link href="/commissions?tab=settlements" className="text-accent underline-offset-4 hover:underline">
+            صفحة العمولات
+          </Link>
+          .
+        </p>
         {del.dialog}
       </header>
 

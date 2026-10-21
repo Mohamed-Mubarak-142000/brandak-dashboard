@@ -15,6 +15,7 @@ import { Badge, BRAND_STATUS, PAYMENT_STATUS, STORE_TYPE, SUBSCRIPTION_STATUS } 
 import { Button } from "@/components/ui/button";
 import { ErrorState, Skeleton } from "@/components/ui/states";
 import { ActivityList } from "@/components/audit/activity-list";
+import { CommissionPanel } from "@/components/commissions/commission-status";
 import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { ACTION_LABEL, BRAND_ACTIONS, useBrandActions } from "./brand-actions";
 
@@ -71,9 +72,9 @@ export function BrandDetail() {
         }
         description={
           b.isVisible ? (
-            <span className="text-success">ظاهر للعملاء ومدفوع حتى {formatDate(b.subscriptionEndsAt)}</span>
+            <span className="text-success">ظاهر للعملاء{b.approvedAt ? <> منذ {formatDate(b.approvedAt)}</> : null}</span>
           ) : b.status === "ACTIVE" ? (
-            <span className="text-warning">مخفي عن العملاء: لا يوجد اشتراك فعّال</span>
+            <span className="text-warning">مخفي عن العملاء</span>
           ) : (
             <>مخفي عن العملاء. أُرسل الطلب في {formatDate(b.createdAt)}</>
           )
@@ -196,6 +197,8 @@ export function BrandDetail() {
         </div>
 
         <div className="flex flex-col gap-6">
+          <CommissionPanel brandId={b._id} />
+
           <Panel>
             <DetailList title="صاحب البراند">
               <DetailRow label="الاسم">{owner?.name ?? <Muted>غير متاح</Muted>}</DetailRow>
@@ -209,11 +212,12 @@ export function BrandDetail() {
           </Panel>
 
           <Panel>
-            <h2 className="mb-3 text-ui font-semibold text-ink">الاشتراكات</h2>
+            <h2 className="text-ui font-semibold text-ink">اشتراكات الباقات القديمة</h2>
+            <p className="mb-3 mt-0.5 text-meta text-ink-3">للسجل فقط؛ المنصة دلوقتي بتاخد عمولة على كل طلب بدل الباقات.</p>
             {subs.isPending ? (
               <Skeleton className="h-16 w-full" />
             ) : !subs.data?.items.length ? (
-              <p className="text-ui text-ink-3">لم يطلب اشتراكًا بعد.</p>
+              <p className="text-ui text-ink-3">لا توجد اشتراكات سابقة.</p>
             ) : (
               <ul className="flex flex-col divide-y divide-line">
                 {subs.data.items.map((sub) => (
@@ -234,7 +238,7 @@ export function BrandDetail() {
           </Panel>
 
           <Panel>
-            <h2 className="mb-3 text-ui font-semibold text-ink">المدفوعات</h2>
+            <h2 className="mb-3 text-ui font-semibold text-ink">مدفوعات الباقات القديمة</h2>
             {payments.isPending ? (
               <Skeleton className="h-16 w-full" />
             ) : !payments.data?.items.length ? (
