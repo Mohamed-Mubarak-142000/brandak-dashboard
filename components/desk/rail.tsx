@@ -14,6 +14,7 @@ import {
   MessageCircleQuestion,
   ReceiptText,
   ScrollText,
+  SearchX,
   Settings2,
   ShoppingBag,
   TicketPercent,
@@ -106,6 +107,12 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
       { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
       { href: "/returns", label: "المرتجعات", icon: Undo2, ready: true },
+      {
+        href: "/insights",
+        label: "الناس بتدوّر على إيه",
+        icon: SearchX,
+        ready: true,
+      },
       {
         href: "/questions",
         label: "أسئلة المنتجات",

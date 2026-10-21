@@ -725,3 +725,10 @@ export interface UploadResult {
   mime: string;
   size: number;
 }
+
+/** A search term that found no products, as GET /admin/insights/searches returns it. */
+export interface MissedSearch {
+  term: string;
+  searches: number;
+  results: number;
+}

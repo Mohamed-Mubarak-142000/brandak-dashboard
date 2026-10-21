@@ -48,6 +48,7 @@ export const qk = {
   payouts: (status: string, page: number) =>
     ["resellers", "payouts", status, page] as const,
   payoutCounts: ["resellers", "payouts", "counts"] as const,
+  missedSearches: (days: number) => ["insights", "searches", days] as const,
 };
 
 /** Number of items waiting in each admin queue (shown in the rail). */
