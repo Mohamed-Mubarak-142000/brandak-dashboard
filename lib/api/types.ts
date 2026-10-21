@@ -597,3 +597,26 @@ export interface AdminOverview {
   queues: { pendingPayments: number; pendingBrandApplications: number; openReports: number };
   orders: { count: number; gmv: number };
 }
+
+/** A product question as the admin moderation list returns it. */
+export interface AdminQuestion {
+  id: string;
+  productId: string;
+  productTitle: string;
+  brandId: string;
+  brandName: string;
+  userName: string;
+  text: string;
+  answer: string | null;
+  answeredAt: string | null;
+  hidden: boolean;
+  createdAt: string;
+}
+
+export interface UploadResult {
+  id: string;
+  purpose: string;
+  url: string | null;
+  mime: string;
+  size: number;
+}

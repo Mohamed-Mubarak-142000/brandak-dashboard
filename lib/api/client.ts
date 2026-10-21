@@ -3,6 +3,8 @@
  * the session; this module only unwraps the `{ success, data, meta }` envelope.
  */
 
+import type { UploadResult } from "./types";
+
 export interface ErrorDetail {
   field?: string;
   reason: string;
@@ -81,8 +83,9 @@ async function request<T>(path: string, { method = "GET", body, query }: Request
   const send = () =>
     fetch(url, {
       method,
-      headers: body === undefined ? undefined : { "content-type": "application/json" },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      // FormData (file uploads) sets its own multipart content type.
+      headers: body === undefined || body instanceof FormData ? undefined : { "content-type": "application/json" },
+      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
       cache: "no-store",
     });
 
@@ -118,4 +121,11 @@ export const api = {
   post: async <T>(path: string, body: unknown = {}) => (await request<T>(path, { method: "POST", body })).data,
   patch: async <T>(path: string, body: unknown) => (await request<T>(path, { method: "PATCH", body })).data,
   put: async <T>(path: string, body: unknown) => (await request<T>(path, { method: "PUT", body })).data,
+  /** Uploads one file (POST /uploads); send the returned `id` in the entity's *FileIds field. */
+  upload: async (file: File, purpose: string) => {
+    const form = new FormData();
+    form.append("purpose", purpose);
+    form.append("file", file);
+    return (await request<UploadResult>("/uploads", { method: "POST", body: form })).data;
+  },
 };

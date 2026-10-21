@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Clock, Gavel, Send, ShieldCheck } from "lucide-react";
+import { Clock, Gavel, ImagePlus, Loader2, Send, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -88,26 +88,65 @@ function Thread({ ticket }: { ticket: TicketView }) {
   );
 }
 
+const MAX_PHOTOS = 4;
+const MAX_BYTES = 4 * 1024 * 1024;
+
 function ReplyBox({ ticket }: { ticket: TicketView }) {
   const queryClient = useQueryClient();
   const [text, setText] = useState("");
+  // Screenshots or photos for the customer/store (e.g. where to find a setting).
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [uploading, setUploading] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const addPhotos = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadError(null);
+    const picked = Array.from(files).slice(0, MAX_PHOTOS - photos.length);
+    for (const file of picked) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setUploadError("الصور لازم تكون JPG أو PNG أو WEBP");
+        continue;
+      }
+      if (file.size > MAX_BYTES) {
+        setUploadError("الصورة أكبر من 4 ميجا");
+        continue;
+      }
+      setUploading((n) => n + 1);
+      try {
+        const res = await api.upload(file, "CLAIM_IMAGE");
+        setPhotos((p) => [...p, { id: res.id, url: res.url ?? URL.createObjectURL(file) }]);
+      } catch {
+        setUploadError("لم يتم رفع الصورة. تأكد من الاتصال وجرّب تاني");
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
   const reply = useAction({
-    run: (body: { text: string }) => api.post<TicketView>(`/admin/tickets/${ticket.id}/messages`, body),
+    run: (body: { text: string; imageFileIds?: string[] }) => api.post<TicketView>(`/admin/tickets/${ticket.id}/messages`, body),
     success: "تم إرسال الرد",
     failure: "لم يتم إرسال الرد",
     invalidate: [["tickets", "list"]],
     onDone: (saved) => {
       queryClient.setQueryData(qk.ticket(ticket.id), saved);
       setText("");
+      setPhotos([]);
     },
   });
   const trimmed = text.trim();
+  const send = () => {
+    if (trimmed && !uploading) reply.mutate({ text: trimmed, imageFileIds: photos.length ? photos.map((p) => p.id) : undefined });
+  };
   return (
     <form
       className="mt-5 border-t border-line pt-4"
       onSubmit={(e) => {
         e.preventDefault();
-        if (trimmed) reply.mutate({ text: trimmed });
+        send();
       }}
     >
       <Field label="رد دعم فاترينة" hint={ticket.protection ? "الرد بيوصل للعميل وللمتجر." : "الرد بيوصل للعميل."}>
@@ -118,15 +157,51 @@ function ReplyBox({ ticket }: { ticket: TicketView }) {
             maxLength={2000}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && trimmed) reply.mutate({ text: trimmed });
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) send();
             }}
             placeholder="اكتب ردك هنا…"
           />
         )}
       </Field>
+      {(photos.length > 0 || uploading > 0) && (
+        <ul className="mt-3 flex flex-wrap gap-2" aria-label="الصور المرفقة">
+          {photos.map((p) => (
+            <li key={p.id} className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element -- uploaded preview from the API host */}
+              <img src={p.url} alt="" className="size-16 rounded-sm border border-line object-cover" />
+              <button
+                type="button"
+                onClick={() => setPhotos((list) => list.filter((x) => x.id !== p.id))}
+                className="absolute -end-2 -top-2 grid size-6 place-items-center rounded-full border border-line bg-surface text-ink-2 hover:text-danger"
+                aria-label="شيل الصورة"
+              >
+                <X aria-hidden className="size-3.5" />
+              </button>
+            </li>
+          ))}
+          {Array.from({ length: uploading }).map((_, i) => (
+            <li key={`up-${i}`} className="grid size-16 place-items-center rounded-sm border border-line bg-sunken">
+              <Loader2 aria-hidden className="size-5 animate-spin text-ink-3" />
+              <span className="sr-only">جاري رفع الصورة</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {uploadError && (
+        <p role="alert" className="mt-2 text-meta text-danger">
+          {uploadError}
+        </p>
+      )}
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="num text-meta text-ink-3">{text.length}/2000</span>
-        <Button type="submit" variant="primary" loading={reply.isPending} disabled={!trimmed}>
+        <div className="flex items-center gap-3">
+          <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" multiple hidden onChange={(e) => void addPhotos(e.target.files)} />
+          <Button type="button" variant="ghost" size="sm" disabled={photos.length + uploading >= MAX_PHOTOS} onClick={() => fileInput.current?.click()}>
+            <ImagePlus aria-hidden className="size-4" />
+            إرفاق صور <span className="num text-ink-3">({photos.length}/{MAX_PHOTOS})</span>
+          </Button>
+          <span className="num text-meta text-ink-3">{text.length}/2000</span>
+        </div>
+        <Button type="submit" variant="primary" loading={reply.isPending} disabled={!trimmed || uploading > 0}>
           <Send aria-hidden className="size-4 rtl:-scale-x-100" />
           إرسال الرد
         </Button>

@@ -30,6 +30,7 @@ export const qk = {
   ticket: (id: string) => ["tickets", "detail", id] as const,
   returns: (status: string, page: number) => ["returns", "list", status, page] as const,
   returnCounts: ["returns", "counts"] as const,
+  questions: (visibility: string, answer: string, q: string, page: number) => ["questions", "list", visibility, answer, q, page] as const,
   // Ads: everything under ["ads"].
   ads: (status: string, page: number) => ["ads", "list", status, page] as const,
   adCounts: ["ads", "counts"] as const,

@@ -10,6 +10,7 @@ import {
   LogOut,
   Megaphone,
   Menu,
+  MessageCircleQuestion,
   ReceiptText,
   ScrollText,
   Settings2,
@@ -59,6 +60,7 @@ const NAV: { group: string; items: NavItem[] }[] = [
       { href: "/", label: "نظرة عامة", icon: LayoutList, ready: true },
       { href: "/orders", label: "الطلبات", icon: ShoppingBag, ready: true },
       { href: "/returns", label: "المرتجعات", icon: Undo2, ready: true },
+      { href: "/questions", label: "أسئلة المنتجات", icon: MessageCircleQuestion, ready: true },
       { href: "/promotions", label: "العروض", icon: TicketPercent, ready: true },
       { href: "/users", label: "المستخدمون", icon: Users, ready: true },
       // Subscription payments from before the commission model; kept for the record.
