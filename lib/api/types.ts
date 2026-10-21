@@ -191,6 +191,7 @@ export interface OrderDetail extends OrderSummary {
     quantity: number;
     lineTotal: number;
   }[];
+  /** null for orders the customer collects from the store. */
   address: {
     recipientName: string;
     phone: string;
@@ -203,7 +204,9 @@ export interface OrderDetail extends OrderSummary {
     apartment: string;
     landmark: string;
     location: { lat: number; lng: number } | null;
-  };
+  } | null;
+  fulfillment?: "DELIVERY" | "PICKUP";
+  pickup?: { address: string; governorate: string | null; hours: string; mapUrl: string } | null;
   subtotal: number;
   shippingFee: number;
   discountTotal: number;

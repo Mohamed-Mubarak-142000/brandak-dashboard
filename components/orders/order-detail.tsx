@@ -9,7 +9,12 @@ import { api } from "@/lib/api/client";
 import type { OrderDetail as Order } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatMoney, formatPhone } from "@/lib/format";
-import { DetailList, DetailRow, Muted, Panel } from "@/components/data/detail-list";
+import {
+  DetailList,
+  DetailRow,
+  Muted,
+  Panel,
+} from "@/components/data/detail-list";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { Badge, ORDER_STATUS } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,8 +22,19 @@ import { ErrorState, Skeleton } from "@/components/ui/states";
 import { formatRate } from "@/components/commissions/commission-status";
 import { adminCanCancel, useCancelOrder } from "./orders-page";
 
-const ACTOR: Record<string, string> = { CUSTOMER: "العميل", BRAND: "البراند", ADMIN: "الإدارة", SYSTEM: "النظام" };
-const FLOW = ["PENDING", "CONFIRMED", "PROCESSING", "SHIPPED", "DELIVERED"] as const;
+const ACTOR: Record<string, string> = {
+  CUSTOMER: "العميل",
+  BRAND: "البراند",
+  ADMIN: "الإدارة",
+  SYSTEM: "النظام",
+};
+const FLOW = [
+  "PENDING",
+  "CONFIRMED",
+  "PROCESSING",
+  "SHIPPED",
+  "DELIVERED",
+] as const;
 
 /** The order's path: done steps filled with brand orange, the current one ringed. */
 function StatusTimeline({ order }: { order: Order }) {
@@ -29,7 +45,12 @@ function StatusTimeline({ order }: { order: Order }) {
   const awaiting = order.status === "AWAITING_CONFIRMATION";
   // For an order that ended early, the furthest step it reached in its history.
   const reached = ended
-    ? Math.max(-1, ...order.history.map((h) => FLOW.indexOf(h.status as (typeof FLOW)[number])))
+    ? Math.max(
+        -1,
+        ...order.history.map((h) =>
+          FLOW.indexOf(h.status as (typeof FLOW)[number]),
+        ),
+      )
     : FLOW.indexOf(order.status as (typeof FLOW)[number]);
   const endEntry = at(order.status);
 
@@ -37,8 +58,13 @@ function StatusTimeline({ order }: { order: Order }) {
     <ol className="flex flex-col gap-0">
       {awaiting && (
         <li className="mb-4 rounded-sm border border-line bg-sunken px-3 py-2.5 text-ui">
-          <p className="font-semibold text-ink">{ORDER_STATUS.AWAITING_CONFIRMATION.label}</p>
-          <p className="mt-0.5 text-ink-2">العميل لازم يأكد الطلب بالكود اللي وصله على الإيميل. المتجر مش شايف الطلب لحد ما يتأكد، وبيتلغي تلقائيًا لو متأكدش خلال 24 ساعة.</p>
+          <p className="font-semibold text-ink">
+            {ORDER_STATUS.AWAITING_CONFIRMATION.label}
+          </p>
+          <p className="mt-0.5 text-ink-2">
+            العميل لازم يأكد الطلب بالكود اللي وصله على الإيميل. المتجر مش شايف
+            الطلب لحد ما يتأكد، وبيتلغي تلقائيًا لو متأكدش خلال 24 ساعة.
+          </p>
         </li>
       )}
       {FLOW.map((s, i) => {
@@ -48,18 +74,33 @@ function StatusTimeline({ order }: { order: Order }) {
         return (
           <li key={s} className="relative flex gap-3 pb-5 last:pb-0">
             {i < FLOW.length - 1 && (
-              <span aria-hidden className={cn("absolute start-[9px] top-5 h-[calc(100%-12px)] w-0.5", i < reached ? "bg-brand" : "bg-line")} />
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute start-[9px] top-5 h-[calc(100%-12px)] w-0.5",
+                  i < reached ? "bg-brand" : "bg-line",
+                )}
+              />
             )}
             <span
               aria-hidden
               className={cn(
                 "relative z-10 mt-0.5 size-5 shrink-0 rounded-full border-2",
-                done ? "border-brand bg-brand" : "border-line-strong bg-surface",
+                done
+                  ? "border-brand bg-brand"
+                  : "border-line-strong bg-surface",
                 current && "ring-4 ring-accent-soft",
               )}
             />
             <div className="min-w-0">
-              <p className={cn("text-ui", done ? "font-semibold text-ink" : "text-ink-3")}>{ORDER_STATUS[s].label}</p>
+              <p
+                className={cn(
+                  "text-ui",
+                  done ? "font-semibold text-ink" : "text-ink-3",
+                )}
+              >
+                {ORDER_STATUS[s].label}
+              </p>
               {entry && (
                 <p className="text-meta text-ink-3">
                   {formatDateTime(entry.at)} — {ACTOR[entry.actor]}
@@ -72,9 +113,18 @@ function StatusTimeline({ order }: { order: Order }) {
       })}
       {ended && (
         <li className="mt-4 rounded-sm border border-danger/30 bg-danger-soft px-3 py-2.5 text-ui">
-          <p className="font-semibold text-danger">{refused ? "العميل رفض الاستلام" : "أُلغي الطلب"}</p>
-          {refused && <p className="mt-0.5 text-ink">الشحنة رجعت للمتجر، والكميات رجعت للمخزون. مفيش عمولة على الطلب ده.</p>}
-          {cancelled && order.cancelReason && <p className="mt-0.5 text-ink">{order.cancelReason}</p>}
+          <p className="font-semibold text-danger">
+            {refused ? "العميل رفض الاستلام" : "أُلغي الطلب"}
+          </p>
+          {refused && (
+            <p className="mt-0.5 text-ink">
+              الشحنة رجعت للمتجر، والكميات رجعت للمخزون. مفيش عمولة على الطلب
+              ده.
+            </p>
+          )}
+          {cancelled && order.cancelReason && (
+            <p className="mt-0.5 text-ink">{order.cancelReason}</p>
+          )}
           {endEntry && (
             <p className="mt-0.5 text-meta text-ink-2">
               {formatDateTime(endEntry.at)} — {ACTOR[endEntry.actor]}
@@ -89,7 +139,10 @@ function StatusTimeline({ order }: { order: Order }) {
 
 export function OrderDetail() {
   const { id } = useParams<{ id: string }>();
-  const order = useQuery({ queryKey: ["order", id], queryFn: () => api.get<Order>(`/admin/orders/${id}`) });
+  const order = useQuery({
+    queryKey: ["order", id],
+    queryFn: () => api.get<Order>(`/admin/orders/${id}`),
+  });
   const cancel = useCancelOrder();
 
   if (order.isPending) {
@@ -114,9 +167,19 @@ export function OrderDetail() {
   const o = order.data;
   const a = o.address;
   const s = ORDER_STATUS[o.status];
-  const addressLine = [a.street, a.building && `عمارة ${a.building}`, a.floor && `دور ${a.floor}`, a.apartment && `شقة ${a.apartment}`, a.area, a.city, a.governorateName]
-    .filter(Boolean)
-    .join("، ");
+  const addressLine = a
+    ? [
+        a.street,
+        a.building && `عمارة ${a.building}`,
+        a.floor && `دور ${a.floor}`,
+        a.apartment && `شقة ${a.apartment}`,
+        a.area,
+        a.city,
+        a.governorateName,
+      ]
+        .filter(Boolean)
+        .join("، ")
+    : "";
 
   return (
     <PageShell>
@@ -128,7 +191,11 @@ export function OrderDetail() {
             <Badge tone={s.tone}>{s.label}</Badge>
           </span>
         }
-        description={<>من {o.brand.name}، بتاريخ {formatDateTime(o.createdAt)}</>}
+        description={
+          <>
+            من {o.brand.name}، بتاريخ {formatDateTime(o.createdAt)}
+          </>
+        }
         actions={
           adminCanCancel(o.status) && (
             <Button variant="danger" onClick={() => cancel.ask(o)}>
@@ -146,23 +213,45 @@ export function OrderDetail() {
             </h2>
             <ul className="divide-y divide-line">
               {o.items.map((item) => (
-                <li key={item.variantId} className="flex items-center gap-3 py-3">
+                <li
+                  key={item.variantId}
+                  className="flex items-center gap-3 py-3"
+                >
                   {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt="" width={56} height={56} unoptimized className="size-14 shrink-0 rounded-sm border border-line object-cover" />
+                    <Image
+                      src={item.imageUrl}
+                      alt=""
+                      width={56}
+                      height={56}
+                      unoptimized
+                      className="size-14 shrink-0 rounded-sm border border-line object-cover"
+                    />
                   ) : (
-                    <span aria-hidden className="size-14 shrink-0 rounded-sm bg-sunken" />
+                    <span
+                      aria-hidden
+                      className="size-14 shrink-0 rounded-sm bg-sunken"
+                    />
                   )}
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-ui font-medium text-ink">{item.title}</span>
+                    <span className="block truncate text-ui font-medium text-ink">
+                      {item.title}
+                    </span>
                     <span className="block text-meta text-ink-3">
-                      {[item.size && `المقاس ${item.size}`, item.color && `اللون ${item.color}`].filter(Boolean).join("، ") || "—"}
+                      {[
+                        item.size && `المقاس ${item.size}`,
+                        item.color && `اللون ${item.color}`,
+                      ]
+                        .filter(Boolean)
+                        .join("، ") || "—"}
                     </span>
                   </span>
                   <span className="text-end text-ui">
                     <span className="num block text-ink-2">
                       {item.quantity} × {formatMoney(item.unitPrice)}
                     </span>
-                    <span className="num block font-semibold text-ink">{formatMoney(item.lineTotal)}</span>
+                    <span className="num block font-semibold text-ink">
+                      {formatMoney(item.lineTotal)}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -174,7 +263,9 @@ export function OrderDetail() {
               </div>
               <div className="flex justify-between py-1">
                 <dt className="text-ink-2">الشحن</dt>
-                <dd className="num">{o.shippingFee ? formatMoney(o.shippingFee) : "مجاني"}</dd>
+                <dd className="num">
+                  {o.shippingFee ? formatMoney(o.shippingFee) : "مجاني"}
+                </dd>
               </div>
               {o.coupon ? (
                 <div className="flex items-start justify-between gap-3 py-1">
@@ -185,7 +276,11 @@ export function OrderDetail() {
                         {o.coupon.code}
                       </span>
                     </span>
-                    {o.coupon.fundedBy === "PLATFORM" ? <Badge tone="accent">على حساب فاترينة</Badge> : <Badge>على حساب المتجر</Badge>}
+                    {o.coupon.fundedBy === "PLATFORM" ? (
+                      <Badge tone="accent">على حساب فاترينة</Badge>
+                    ) : (
+                      <Badge>على حساب المتجر</Badge>
+                    )}
                   </dt>
                   <dd dir="ltr" className="num text-success">
                     −{formatMoney(o.coupon.discount)}
@@ -194,7 +289,9 @@ export function OrderDetail() {
               ) : null}
               {o.discountTotal > (o.coupon?.discount ?? 0) && (
                 <div className="flex justify-between py-1">
-                  <dt className="text-ink-2">{o.coupon ? "خصم تاني" : "الخصم"}</dt>
+                  <dt className="text-ink-2">
+                    {o.coupon ? "خصم تاني" : "الخصم"}
+                  </dt>
                   <dd dir="ltr" className="num text-success">
                     −{formatMoney(o.discountTotal - (o.coupon?.discount ?? 0))}
                   </dd>
@@ -204,11 +301,18 @@ export function OrderDetail() {
                 <dt>الإجمالي</dt>
                 <dd className="num">{formatMoney(o.grandTotal)}</dd>
               </div>
-              <p className="mt-1 text-meta text-ink-3">{o.paymentStatus === "PAID" ? "تم التحصيل عند الاستلام" : "الدفع عند الاستلام"}</p>
+              <p className="mt-1 text-meta text-ink-3">
+                {o.paymentStatus === "PAID"
+                  ? "تم التحصيل عند الاستلام"
+                  : "الدفع عند الاستلام"}
+              </p>
               {o.coupon?.fundedBy === "PLATFORM" && (
                 <p className="mt-1 text-meta text-ink-3">
                   خصم الكوبون بتدفعه فاترينة: بيتسجل للمتجر كتسوية لصالحه في{" "}
-                  <Link href={`/commissions/${o.brand.id}`} className="text-accent underline-offset-4 hover:underline">
+                  <Link
+                    href={`/commissions/${o.brand.id}`}
+                    className="text-accent underline-offset-4 hover:underline"
+                  >
                     سجل العمولة
                   </Link>{" "}
                   أول ما الطلب يتسلّم.
@@ -219,11 +323,22 @@ export function OrderDetail() {
                   <dt className="text-ink-2">
                     عمولة فاترينة{" "}
                     <span className="text-meta text-ink-3">
-                      (<span className="num">{formatRate(o.commission.rate)}</span> من <span className="num">{formatMoney(o.commission.base)}</span>)
+                      (
+                      <span className="num">
+                        {formatRate(o.commission.rate)}
+                      </span>{" "}
+                      من{" "}
+                      <span className="num">
+                        {formatMoney(o.commission.base)}
+                      </span>
+                      )
                     </span>
                   </dt>
                   <dd>
-                    <Link href={`/commissions/${o.brand.id}`} className="num font-semibold text-accent underline-offset-4 hover:underline">
+                    <Link
+                      href={`/commissions/${o.brand.id}`}
+                      className="num font-semibold text-accent underline-offset-4 hover:underline"
+                    >
                       {formatMoney(o.commission.amount)}
                     </Link>
                   </dd>
@@ -234,7 +349,9 @@ export function OrderDetail() {
 
           {o.notes && (
             <Panel>
-              <h2 className="mb-1 text-ui font-semibold text-ink">ملاحظات العميل</h2>
+              <h2 className="mb-1 text-ui font-semibold text-ink">
+                ملاحظات العميل
+              </h2>
               <p className="text-ui text-ink-2">{o.notes}</p>
             </Panel>
           )}
@@ -249,7 +366,9 @@ export function OrderDetail() {
           {o.shipment && (
             <Panel>
               <DetailList title="الشحنة">
-                <DetailRow label="شركة الشحن">{o.shipment.carrier || <Muted>—</Muted>}</DetailRow>
+                <DetailRow label="شركة الشحن">
+                  {o.shipment.carrier || <Muted>—</Muted>}
+                </DetailRow>
                 <DetailRow label="رقم التتبع">
                   {o.shipment.trackingNumber ? (
                     <span dir="ltr" className="num select-all">
@@ -259,54 +378,86 @@ export function OrderDetail() {
                     <Muted>—</Muted>
                   )}
                 </DetailRow>
-                <DetailRow label="تاريخ الشحن">{formatDateTime(o.shipment.shippedAt)}</DetailRow>
-                {o.shipment.trackingUrl && /^https?:\/\//i.test(o.shipment.trackingUrl) && (
-                  <DetailRow label="التتبع">
+                <DetailRow label="تاريخ الشحن">
+                  {formatDateTime(o.shipment.shippedAt)}
+                </DetailRow>
+                {o.shipment.trackingUrl &&
+                  /^https?:\/\//i.test(o.shipment.trackingUrl) && (
+                    <DetailRow label="التتبع">
+                      <a
+                        href={o.shipment.trackingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-ui text-accent underline-offset-4 hover:underline"
+                      >
+                        <Truck aria-hidden className="size-4" />
+                        تتبّع الشحنة على موقع الشركة
+                      </a>
+                    </DetailRow>
+                  )}
+              </DetailList>
+            </Panel>
+          )}
+
+          {!a ? (
+            <Panel>
+              <DetailList title="العميل والاستلام">
+                <DetailRow label="طريقة الاستلام">
+                  من المتجر (من غير شحن)
+                </DetailRow>
+                {o.customer && (
+                  <DetailRow label="العميل">{o.customer.name}</DetailRow>
+                )}
+                {o.customer && (
+                  <DetailRow label="الهاتف">
+                    <span className="num">{formatPhone(o.customer.phone)}</span>
+                  </DetailRow>
+                )}
+                <DetailRow label="عنوان الاستلام">
+                  {o.pickup?.address || <Muted>—</Muted>}
+                </DetailRow>
+                {o.pickup?.hours && (
+                  <DetailRow label="المواعيد">{o.pickup.hours}</DetailRow>
+                )}
+              </DetailList>
+            </Panel>
+          ) : (
+            <Panel>
+              <DetailList title="العميل والتوصيل">
+                <DetailRow label="المستلم">{a.recipientName}</DetailRow>
+                <DetailRow label="الهاتف">
+                  <span className="num">{formatPhone(a.phone)}</span>
+                </DetailRow>
+                <DetailRow label="العنوان">{addressLine}</DetailRow>
+                {a.landmark && (
+                  <DetailRow label="علامة مميزة">{a.landmark}</DetailRow>
+                )}
+                <DetailRow label="الموقع">
+                  {a.location ? (
                     <a
-                      href={o.shipment.trackingUrl}
+                      href={`https://www.openstreetmap.org/?mlat=${a.location.lat}&mlon=${a.location.lng}#map=17/${a.location.lat}/${a.location.lng}`}
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1 text-ui text-accent underline-offset-4 hover:underline"
                     >
-                      <Truck aria-hidden className="size-4" />
-                      تتبّع الشحنة على موقع الشركة
+                      <MapPin aria-hidden className="size-4" />
+                      فتح على الخريطة
                     </a>
-                  </DetailRow>
-                )}
+                  ) : (
+                    <Muted>لم يحدد العميل موقعًا</Muted>
+                  )}
+                </DetailRow>
               </DetailList>
             </Panel>
           )}
 
           <Panel>
-            <DetailList title="العميل والتوصيل">
-              <DetailRow label="المستلم">{a.recipientName}</DetailRow>
-              <DetailRow label="الهاتف">
-                <span className="num">{formatPhone(a.phone)}</span>
-              </DetailRow>
-              <DetailRow label="العنوان">{addressLine}</DetailRow>
-              {a.landmark && <DetailRow label="علامة مميزة">{a.landmark}</DetailRow>}
-              <DetailRow label="الموقع">
-                {a.location ? (
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${a.location.lat}&mlon=${a.location.lng}#map=17/${a.location.lat}/${a.location.lng}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-ui text-accent underline-offset-4 hover:underline"
-                  >
-                    <MapPin aria-hidden className="size-4" />
-                    فتح على الخريطة
-                  </a>
-                ) : (
-                  <Muted>لم يحدد العميل موقعًا</Muted>
-                )}
-              </DetailRow>
-            </DetailList>
-          </Panel>
-
-          <Panel>
             <DetailList title="البراند">
               <DetailRow label="الاسم">
-                <Link href={`/brands/${o.brand.id}`} className="text-accent underline-offset-4 hover:underline">
+                <Link
+                  href={`/brands/${o.brand.id}`}
+                  className="text-accent underline-offset-4 hover:underline"
+                >
                   {o.brand.name}
                 </Link>
               </DetailRow>
