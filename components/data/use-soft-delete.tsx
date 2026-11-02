@@ -25,6 +25,7 @@ export function useSoftDelete({
   noun,
   invalidate,
   warning,
+  mapError,
   onDone,
 }: {
   base: string;
@@ -33,12 +34,17 @@ export function useSoftDelete({
   invalidate: QueryKey[];
   /** What deleting does, shown in the confirmation. */
   warning: string;
+  /** Rewrites a refusal (e.g. "has sub-categories") before the error toast shows it. */
+  mapError?: (e: unknown) => never;
   onDone?: (action: "delete" | "restore") => void;
 }) {
   const [confirming, setConfirming] = useState<Target | null>(null);
 
   const act = useAction({
-    run: ({ target, action }: { target: Target; action: "delete" | "restore" }) => api.post(`${base}/${target.id}/${action}`, {}),
+    run: ({ target, action }: { target: Target; action: "delete" | "restore" }) => {
+      const req = api.post(`${base}/${target.id}/${action}`, {});
+      return mapError ? req.catch(mapError) : req;
+    },
     success: ({ target, action }) => ({ title: action === "delete" ? `تم حذف ${noun}` : `تم استرجاع ${noun}`, description: target.name }),
     failure: "لم يتم تنفيذ الإجراء",
     invalidate,

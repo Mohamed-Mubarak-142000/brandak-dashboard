@@ -377,8 +377,76 @@ export interface Category {
   icon?: string;
   sortOrder: number;
   isActive: boolean;
-  /** Store types offered this category when opening a store; empty = all types. */
+  /** Store types offered this category when opening a store; empty = all types. Sub-categories carry their top level's. */
   storeTypes?: StoreType[];
+  /** 0 = top-level section, 1 = category, 2 = sub-category. */
+  level: 0 | 1 | 2;
+  /** Ids from the top level down to the parent. */
+  ancestors: string[];
+  /** Only what differs from the parent; null = inherits everything. */
+  template: CategoryTemplate | null;
+}
+
+// ---------- Category product templates ----------
+
+export type SpecType = "text" | "number" | "select" | "boolean";
+
+/** A field a store fills in for a product. Merged down the tree by `key`: a child overrides its parent's. */
+export interface SpecDef {
+  /** ^[a-z][a-z0-9_]{1,30}$ */
+  key: string;
+  labelAr: string;
+  type: SpecType;
+  /** Choices for a select. */
+  options?: string[];
+  /** Shown after a number ("شهر", "لتر"). */
+  unit?: string;
+  /** Needed before the product can be published. */
+  required?: boolean;
+  /** Customers can filter by it. */
+  filterable?: boolean;
+}
+
+/** The variant "size" axis, renamed per category (المقاس، المساحة، الحجم…). */
+export interface SizeAxis {
+  label: string;
+  /** Key from GET /admin/categories/presets. */
+  preset?: string;
+  /** Extra values, added after the preset's. */
+  values?: string[];
+  /** The store may type a value that is not listed. */
+  allowCustom?: boolean;
+}
+
+export interface ColorAxis {
+  label: string;
+  allowCustom?: boolean;
+}
+
+/** Stored per category. A missing field inherits from the parent; `null` turns the axis off. */
+export interface CategoryTemplate {
+  size?: SizeAxis | null;
+  color?: ColorAxis | null;
+  specs?: SpecDef[];
+  /** Selling units; the first is the default. */
+  units?: string[];
+  sizeGuide?: string;
+}
+
+/** GET /categories/:id/template — after inheritance and presets. */
+export interface ResolvedTemplate {
+  size: (SizeAxis & { values: string[]; allowCustom: boolean }) | null;
+  color: (ColorAxis & { allowCustom: boolean }) | null;
+  specs: SpecDef[];
+  units: string[];
+  sizeGuide: string | null;
+  wholesale: "optional" | "required";
+}
+
+/** GET /admin/categories/presets. */
+export interface CategoryPresets {
+  sizes: Record<string, { labelAr: string; values: string[] }>;
+  units: string[];
 }
 
 // ---------- Commission ----------

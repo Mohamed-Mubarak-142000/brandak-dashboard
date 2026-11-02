@@ -7,24 +7,23 @@ import { Archive, EyeOff, Eye, Pencil, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useAction } from "@/lib/api/use-action";
-import type { Category, Plan } from "@/lib/api/types";
+import type { Plan } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { formatMoney, formatNumber } from "@/lib/format";
 import { useUrlState } from "@/lib/use-url-state";
 import { DataTable, MobileRow, type TableFeatures } from "@/components/data/data-table";
 import { PageHeader, PageShell } from "@/components/data/page-header";
 import { RowMenu } from "@/components/data/row-menu";
-import { Badge, STORE_TYPE } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSoftDelete } from "@/components/data/use-soft-delete";
-import { CategoryFormDialog } from "./category-form";
+import { CategoriesTab } from "./categories-tab";
 import { CommissionSettings } from "./commission-settings";
+import { DeletedToggle } from "./deleted-toggle";
 import { PlanFormDialog } from "./plan-form";
 
 const planHelper = createColumnHelper<TableFeatures, Plan>();
-const catHelper = createColumnHelper<TableFeatures, Category>();
 const NO_PLANS: Plan[] = [];
-const NO_CATS: Category[] = [];
 
 const ActiveBadge = ({ active }: { active: boolean }) => (active ? <Badge tone="success">مفعّل</Badge> : <Badge>مخفي</Badge>);
 
@@ -36,29 +35,6 @@ const FreeBadge = () => <Badge tone="accent">مجانية</Badge>;
 function planLimitsText({ limits }: Plan) {
   const orders = limits.maxOrdersPerMonth == null ? "طلبات بلا حد" : `${formatNumber(limits.maxOrdersPerMonth)} طلب/شهر`;
   return [`${formatNumber(limits.maxActiveProducts)} منتج`, orders, `${formatNumber(limits.maxImagesPerProduct)} ${limits.maxImagesPerProduct === 1 ? "صورة" : "صور"}`].join(" · ");
-}
-
-/** "الحالية / المحذوفة" switch for the unpaginated settings tables. */
-function DeletedToggle({ value, onChange, deletedCount }: { value: boolean; onChange: (v: boolean) => void; deletedCount: number }) {
-  return (
-    <div role="tablist" aria-label="عرض" className="inline-flex rounded-sm border border-line bg-sunken p-1 text-ui">
-      {[
-        { v: false, label: "الحالية" },
-        { v: true, label: `المحذوفة (${deletedCount})` },
-      ].map((o) => (
-        <button
-          key={String(o.v)}
-          type="button"
-          role="tab"
-          aria-selected={value === o.v}
-          onClick={() => onChange(o.v)}
-          className={cn("h-8 rounded-sm px-3", value === o.v ? "bg-surface font-semibold text-ink shadow-sm" : "text-ink-3")}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
 }
 
 function PlansTab() {
@@ -152,107 +128,6 @@ function PlansTab() {
         mobileItem={(p) => <MobileRow title={p.nameAr} trailing={isFreePlan(p) ? <FreeBadge /> : <span className="num">{formatMoney(p.priceMonthly)}</span>} meta={planLimitsText(p)} badge={<ActiveBadge active={p.isActive} />} actions={menu(p)} />}
       />
       <PlanFormDialog plan={editing} open={formOpen} onOpenChange={setFormOpen} />
-      {del.dialog}
-    </>
-  );
-}
-
-function CategoriesTab() {
-  const [editing, setEditing] = useState<Category | null>(null);
-  const [formOpen, setFormOpen] = useState(false);
-  const cats = useQuery({ queryKey: ["categories"], queryFn: () => api.get<Category[]>("/admin/categories") });
-  const toggle = useAction({
-    run: (c: Category) => api.patch(`/admin/categories/${c._id}`, { isActive: !c.isActive }),
-    success: (c) => ({ title: c.isActive ? "تم إخفاء التصنيف" : "تم تفعيل التصنيف", description: c.nameAr }),
-    failure: "لم يتم تحديث التصنيف",
-    invalidate: [["categories"]],
-  });
-  const open = (c: Category | null) => {
-    setEditing(c);
-    setFormOpen(true);
-  };
-  const all = cats.data ?? NO_CATS;
-  const [showDeleted, setShowDeleted] = useState(false);
-  const visibleCats = useMemo(() => all.filter((c) => !!c.deletedAt === showDeleted), [all, showDeleted]);
-  const del = useSoftDelete({
-    base: "/admin/categories",
-    noun: "التصنيف",
-    invalidate: [["categories"]],
-    warning: "مش هيظهر للعملاء ولا لأصحاب المتاجر. المنتجات اللي عليه بتفضل موجودة.",
-  });
-  const parentName = (id: string | null) => (id ? all.find((c) => c._id === id)?.nameAr ?? "—" : "—");
-  const menu = (c: Category) => (
-    <RowMenu
-      label={`إجراءات تصنيف ${c.nameAr}`}
-      items={[
-        { label: "تعديل", icon: Pencil, onSelect: () => open(c), hidden: !!c.deletedAt },
-        { label: c.isActive ? "إخفاء التصنيف" : "تفعيل التصنيف", icon: c.isActive ? EyeOff : Eye, danger: c.isActive, separated: true, onSelect: () => toggle.mutate(c), hidden: !!c.deletedAt },
-        ...del.menuItems({ id: c._id, name: c.nameAr }, !!c.deletedAt),
-      ]}
-    />
-  );
-
-  const columns = useMemo(
-    () =>
-      catHelper.columns([
-        catHelper.accessor("nameAr", {
-          header: "التصنيف",
-          cell: (info) => (
-            <span className="flex flex-col">
-              <span className={cn("font-medium text-ink", info.row.original.parentId && "ps-4")}>{info.getValue()}</span>
-              <span className={cn("text-meta text-ink-3", info.row.original.parentId && "ps-4")}>{info.row.original.nameEn}</span>
-            </span>
-          ),
-        }),
-        catHelper.accessor("slug", { header: "الرابط", cell: (i) => <span className="num text-ink-2">{i.getValue()}</span> }),
-        catHelper.accessor("parentId", { header: "تابع لـ", cell: (i) => parentName(i.getValue()) }),
-        catHelper.accessor((c) => c.storeTypes ?? [], {
-          id: "storeTypes",
-          header: "أنواع المتاجر",
-          cell: (i) =>
-            i.getValue().length ? (
-              <span className="flex flex-wrap gap-1">
-                {i.getValue().map((t) => (
-                  <Badge key={t}>{STORE_TYPE[t]?.label ?? t}</Badge>
-                ))}
-              </span>
-            ) : (
-              <span className="text-meta text-ink-3">كل الأنواع</span>
-            ),
-        }),
-        catHelper.accessor("sortOrder", { header: "الترتيب", cell: (i) => <span className="num">{i.getValue()}</span> }),
-        catHelper.accessor("isActive", { header: "الحالة", cell: (i) => <ActiveBadge active={i.getValue()} /> }),
-        catHelper.display({ id: "actions", header: () => <span className="sr-only">إجراءات</span>, cell: (i) => <div className="flex justify-end">{menu(i.row.original)}</div> }),
-      ]),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [all],
-  );
-
-  return (
-    <>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <DeletedToggle value={showDeleted} onChange={setShowDeleted} deletedCount={all.filter((c) => c.deletedAt).length} />
-          <p className="text-ui text-ink-2">تصنيفات المتاجر والمنتجات اللي العملاء بيتصفحوا بيها.</p>
-        </div>
-        <Button variant="primary" onClick={() => open(null)}>
-          <Plus aria-hidden className="size-4" />
-          تصنيف جديد
-        </Button>
-      </div>
-      <DataTable
-        label="جدول التصنيفات"
-        columns={columns}
-        data={visibleCats}
-        getRowId={(c) => c._id}
-        onRowClick={(c) => !c.deletedAt && open(c)}
-        isPending={cats.isPending}
-        error={cats.error}
-        onRetry={() => cats.refetch()}
-        empty={showDeleted ? { title: "مفيش تصنيفات محذوفة" } : { title: "لا توجد تصنيفات", description: "أضف تصنيفًا ليختار منه أصحاب المتاجر." }}
-        mobileItem={(c) => <MobileRow title={c.nameAr} meta={c.nameEn} badge={<ActiveBadge active={c.isActive} />} actions={menu(c)} />}
-      />
-      <CategoryFormDialog category={editing} categories={all.filter((c) => !c.deletedAt)} open={formOpen} onOpenChange={setFormOpen} />
       {del.dialog}
     </>
   );
