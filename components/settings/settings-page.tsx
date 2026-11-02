@@ -138,12 +138,12 @@ export function SettingsPage() {
   const param = url.get("tab");
   const tab = param === "categories" || param === "plans" ? param : "commission";
   const trigger =
-    "relative h-11 px-1 text-ui text-ink-2 transition-colors hover:text-ink data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:-bottom-px data-[state=active]:after:h-0.5 data-[state=active]:after:bg-brand";
+    "relative h-11 px-1 text-ui text-ink-2 transition-colors hover:text-ink data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:after:absolute data-[state=active]:after:inset-x-0 data-[state=active]:after:bottom-0 data-[state=active]:after:h-0.5 data-[state=active]:after:bg-brand";
   return (
     <PageShell>
       <PageHeader title="الإعدادات" description="شروط العمولة وتصنيفات المتاجر." />
       <Tabs.Root value={tab} onValueChange={(v) => url.set({ tab: v === "commission" ? null : v })} dir="rtl" className="mt-6">
-        <Tabs.List aria-label="الإعدادات" className="mb-6 flex gap-6 overflow-x-auto border-b border-line">
+        <Tabs.List aria-label="الإعدادات" className="mb-6 flex gap-6 overflow-x-auto overflow-y-hidden border-b border-line">
           <Tabs.Trigger value="commission" className={trigger}>
             العمولة
           </Tabs.Trigger>
