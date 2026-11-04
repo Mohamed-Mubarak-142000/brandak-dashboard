@@ -40,6 +40,7 @@ import { ErrorState, Skeleton } from "@/components/ui/states";
 import { ActivityList } from "@/components/audit/activity-list";
 import { MAX_STRIKES } from "@/components/support/ticket-labels";
 import { CommissionPanel } from "@/components/commissions/commission-status";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 import { useSoftDelete } from "@/components/data/use-soft-delete";
 import { ACTION_LABEL, BRAND_ACTIONS, useBrandActions } from "./brand-actions";
 
@@ -336,6 +337,8 @@ export function BrandDetail() {
 
         <div className="flex flex-col gap-6">
           <CommissionPanel brandId={b._id} />
+
+          <AssistantPanel brandId={b._id} />
 
           <Panel>
             <DetailList title="صاحب البراند">

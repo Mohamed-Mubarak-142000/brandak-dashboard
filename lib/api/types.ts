@@ -800,3 +800,70 @@ export interface MissedSearch {
   searches: number;
   results: number;
 }
+
+/** Store AI assistant: tone of the replies the owner (or an admin) picked. */
+export type AssistantTone = "friendly" | "formal" | "brief";
+
+/** GET/PATCH admin/brands/:id/assistant. */
+export interface AssistantSettings {
+  enabled: boolean;
+  /** Empty = the default name «مساعد {store}» (see displayName). */
+  name: string;
+  tone: AssistantTone;
+  extraInfo: string;
+  /** The name customers see, already resolved. */
+  displayName: string;
+  /** False when the AI isn't configured on the server: nothing answers whatever the switch says. */
+  available: boolean;
+}
+
+export interface AssistantBrandRef {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+/** A row of GET admin/assistant/conversations (newest activity first). */
+export interface AssistantConversationItem {
+  id: string;
+  brand?: AssistantBrandRef;
+  lastAt: string;
+  createdAt: string;
+  count: number;
+  /** First 140 characters of the last message. */
+  lastMessage: { role: "user" | "assistant"; text: string; at: string } | null;
+  hasUnanswered: boolean;
+  signedIn: boolean;
+  customerFirstName: string | null;
+  productId: string | null;
+  seen: boolean;
+}
+
+export interface AssistantProductRef {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+}
+
+export interface AssistantMessage {
+  role: "user" | "assistant";
+  text: string;
+  at: string;
+  /** The assistant didn't have the information to answer. */
+  unanswered: boolean;
+  products: AssistantProductRef[];
+}
+
+/** GET admin/assistant/conversations/:id. */
+export interface AssistantConversation {
+  id: string;
+  brand: AssistantBrandRef;
+  signedIn: boolean;
+  customerFirstName: string | null;
+  /** The product page the chat was opened from. */
+  product: AssistantProductRef | null;
+  lastAt: string;
+  createdAt: string;
+  count: number;
+  messages: AssistantMessage[];
+}

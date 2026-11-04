@@ -49,6 +49,11 @@ export const qk = {
     ["resellers", "payouts", status, page] as const,
   payoutCounts: ["resellers", "payouts", "counts"] as const,
   missedSearches: (days: number) => ["insights", "searches", days] as const,
+  // Store assistant: everything under ["assistant"].
+  assistantConversations: (brandId: string, unanswered: boolean, page: number) =>
+    ["assistant", "conversations", brandId, unanswered, page] as const,
+  assistantConversation: (id: string) => ["assistant", "conversation", id] as const,
+  assistantSettings: (brandId: string) => ["assistant", "settings", brandId] as const,
 };
 
 /** Number of items waiting in each admin queue (shown in the rail). */

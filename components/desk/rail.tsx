@@ -4,6 +4,7 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import * as RDialog from "@radix-ui/react-dialog";
 import {
   BadgeDollarSign,
+  Bot,
   Flag,
   HandCoins,
   LayoutList,
@@ -119,6 +120,8 @@ const NAV: { group: string; items: NavItem[] }[] = [
         icon: MessageCircleQuestion,
         ready: true,
       },
+      // Chats with the stores' AI assistants; flags questions it couldn't answer.
+      { href: "/assistant", label: "مساعد المتاجر", icon: Bot, ready: true },
       {
         href: "/promotions",
         label: "العروض",
